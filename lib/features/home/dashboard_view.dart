@@ -1,32 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-class DashboardController extends GetxController {
-  var userName = 'User Name'.obs;
-  var userRole = 'User role • User designation'.obs;
-  var location = '-- --'.obs;
-
-  var directReports = [
-    {
-      'name': 'Aniruddha Mukhopadhyay',
-      'role': 'Tower Lead',
-      'designation': 'Sr. Project Manager',
-      'location': 'ITC Green Center',
-      'date': '00/00/0000',
-      'time': '10:31',
-    },
-  ].obs;
-
-  final statusCards = [
-    {'count': '7', 'label': 'Green Center', 'icon': Icons.business},
-    {'count': '5', 'label': 'Kanak Tower', 'icon': Icons.business},
-    {'count': '2', 'label': 'Work From Home', 'icon': Icons.home},
-    {'count': '0', 'label': 'On Leave', 'icon': Icons.cases_rounded},
-  ];
-}
+import 'package:smis_attendance_tracker/features/home/home_controller.dart';
+import 'package:smis_attendance_tracker/features/home/model/user_model.dart';
 
 class DashboardScreen extends StatelessWidget {
-  final DashboardController controller = Get.put(DashboardController());
+  final HomeController controller = Get.put(HomeController());
 
   DashboardScreen({Key? key}) : super(key: key);
 
@@ -39,7 +17,6 @@ class DashboardScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // _buildTopSection(size),
             SizedBox(height: size.height * 0.02),
             _buildStatusCards(size),
             SizedBox(height: size.height * 0.02),
@@ -52,138 +29,59 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTopSection(Size size) {
-    return Stack(
-      clipBehavior: Clip.none, // Allow button to overflow
-      children: [
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.only(
-            top: size.height * 0.08,
-            left: size.width * 0.05,
-            right: size.width * 0.05,
-            bottom: size.height * 0.06, // Leave space for button
-          ),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1B5E20),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(30),
-              bottomRight: Radius.circular(30),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CircleAvatar(
-                    radius: size.width * 0.06,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person,
-                      color: const Color(0xFF1B5E20),
-                      size: size.width * 0.08,
-                    ),
-                  ),
-                  const Icon(Icons.more_vert, color: Colors.white),
-                ],
-              ),
-              SizedBox(height: size.height * 0.015),
-              const Text(
-                'Good morning,',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              Obx(
-                () => Text(
-                  controller.userName.value,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: size.width * 0.06,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Obx(
-                () => Text(
-                  controller.userRole.value,
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: size.width * 0.035,
-                  ),
-                ),
-              ),
-              Obx(
-                () => Text(
-                  'Location: ${controller.location.value}',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: size.width * 0.035,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Floating Mark Attendance Button
-        Positioned(
-          bottom: -size.height * 0.03, // overlaps the container
-          left: size.width * 0.25,
-          right: size.width * 0.25,
-          child: ElevatedButton(
-            onPressed: () {
-              // TODO: Implement mark attendance
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF1B5E20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              padding: EdgeInsets.symmetric(vertical: size.height * 0.02),
-              elevation: 5,
-            ),
-            child: Text(
-              'Mark Attendance',
-              style: TextStyle(
-                fontSize: size.width * 0.045,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildStatusCards(Size size) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: size.width * 0.05),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final crossCount = constraints.maxWidth > 600 ? 4 : 2;
-          return GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossCount,
-              crossAxisSpacing: size.width * 0.04,
-              mainAxisSpacing: size.height * 0.01,
-              childAspectRatio: 1.175,
-            ),
-            itemCount: controller.statusCards.length,
-            itemBuilder: (context, index) {
-              final card = controller.statusCards[index];
-              return _buildStatusCard(
-                card['count'] as String,
-                card['label'] as String,
-                card['icon'] as IconData,
-                size.width,
-              );
-            },
-          );
-        },
-      ),
+      child: Obx(() {
+        final statusCards = [
+          {
+            'count': controller.greenCenterCount.value.toString(),
+            'label': 'Green Center',
+            'icon': Icons.business,
+          },
+          {
+            'count': controller.kanakTowerCount.value.toString(),
+            'label': 'Kanak Tower',
+            'icon': Icons.business,
+          },
+          {
+            'count': controller.wfhCount.value.toString(),
+            'label': 'Work From Home',
+            'icon': Icons.home,
+          },
+          {
+            'count': controller.leaveCount.value.toString(),
+            'label': 'On Leave',
+            'icon': Icons.cases_rounded,
+          },
+        ];
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final crossCount = constraints.maxWidth > 600 ? 4 : 2;
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossCount,
+                crossAxisSpacing: size.width * 0.04,
+                mainAxisSpacing: size.height * 0.01,
+                childAspectRatio: 1.175,
+              ),
+              itemCount: statusCards.length,
+              itemBuilder: (context, index) {
+                final card = statusCards[index];
+                return _buildStatusCard(
+                  card['count'] as String,
+                  card['label'] as String,
+                  card['icon'] as IconData,
+                  size.width,
+                );
+              },
+            );
+          },
+        );
+      }),
     );
   }
 
@@ -288,7 +186,6 @@ class DashboardScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top row: count and icon
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -320,7 +217,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDirectReportCard(Map<String, String> report, double width) {
+  Widget _buildDirectReportCard(UserModel report, double width) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 2,
@@ -336,7 +233,7 @@ class DashboardScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    report['name']!,
+                    report.userName,
                     style: TextStyle(
                       fontSize: width * 0.045,
                       fontWeight: FontWeight.bold,
@@ -344,42 +241,32 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    '${report['role']} • ${report['designation']}',
+                    '${report.role} • ${report.designation}',
                     style: TextStyle(
                       fontSize: width * 0.035,
                       color: Colors.grey[600],
                     ),
                   ),
                   SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5E9),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Text(
-                          report['location']!,
-                          style: TextStyle(
-                            color: const Color(0xFF1B5E20),
-                            fontSize: width * 0.03,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Text(
+                      report.todayOffice.isEmpty
+                          ? "Not Started work"
+                          : report.todayOffice,
+                      style: TextStyle(
+                        color: const Color(0xFF1B5E20),
+                        fontSize: width * 0.03,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const Spacer(),
-                      Text(
-                        '${report['date']} ${report['time']}',
-                        style: TextStyle(
-                          fontSize: width * 0.035,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
