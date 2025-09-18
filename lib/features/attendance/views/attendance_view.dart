@@ -73,10 +73,10 @@ class AttendanceView extends StatelessWidget {
                 ),
               ),
               SizedBox(height: SizeConfig.height(20)),
-              TextButton(
-                onPressed: () => Get.offAllNamed(AppRoutes.home),
-                child: const Text("Skip to Homepage"),
-              ),
+              // TextButton(
+              //   onPressed: () => Get.offAllNamed(AppRoutes.home),
+              //   child: const Text("Skip to Homepage"),
+              // ),
             ],
           ),
         ),

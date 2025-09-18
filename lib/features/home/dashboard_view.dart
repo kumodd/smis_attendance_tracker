@@ -39,7 +39,7 @@ class DashboardScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildTopSection(size),
+            // _buildTopSection(size),
             SizedBox(height: size.height * 0.02),
             _buildStatusCards(size),
             SizedBox(height: size.height * 0.02),
@@ -53,96 +53,106 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildTopSection(Size size) {
-    return Container(
-      padding: EdgeInsets.only(
-        top: size.height * 0.08,
-        left: size.width * 0.05,
-        right: size.width * 0.05,
-        bottom: size.height * 0.02,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1B5E20),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Stack(
+      clipBehavior: Clip.none, // Allow button to overflow
+      children: [
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            top: size.height * 0.08,
+            left: size.width * 0.05,
+            right: size.width * 0.05,
+            bottom: size.height * 0.06, // Leave space for button
+          ),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1B5E20),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(30),
+              bottomRight: Radius.circular(30),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: size.width * 0.06,
-                backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.person,
-                  color: const Color(0xFF1B5E20),
-                  size: size.width * 0.08,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CircleAvatar(
+                    radius: size.width * 0.06,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.person,
+                      color: const Color(0xFF1B5E20),
+                      size: size.width * 0.08,
+                    ),
+                  ),
+                  const Icon(Icons.more_vert, color: Colors.white),
+                ],
+              ),
+              SizedBox(height: size.height * 0.015),
+              const Text(
+                'Good morning,',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              Obx(
+                () => Text(
+                  controller.userName.value,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: size.width * 0.06,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const Icon(Icons.more_vert, color: Colors.white),
+              Obx(
+                () => Text(
+                  controller.userRole.value,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: size.width * 0.035,
+                  ),
+                ),
+              ),
+              Obx(
+                () => Text(
+                  'Location: ${controller.location.value}',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: size.width * 0.035,
+                  ),
+                ),
+              ),
             ],
           ),
-          SizedBox(height: size.height * 0.01),
-          const Text('Good morning,', style: TextStyle(color: Colors.white)),
-          Obx(
-            () => Text(
-              controller.userName.value,
+        ),
+        // Floating Mark Attendance Button
+        Positioned(
+          bottom: -size.height * 0.03, // overlaps the container
+          left: size.width * 0.25,
+          right: size.width * 0.25,
+          child: ElevatedButton(
+            onPressed: () {
+              // TODO: Implement mark attendance
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF1B5E20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              padding: EdgeInsets.symmetric(vertical: size.height * 0.02),
+              elevation: 5,
+            ),
+            child: Text(
+              'Mark Attendance',
               style: TextStyle(
-                color: Colors.white,
-                fontSize: size.width * 0.06,
+                fontSize: size.width * 0.045,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          Obx(
-            () => Text(
-              controller.userRole.value,
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: size.width * 0.035,
-              ),
-            ),
-          ),
-          Obx(
-            () => Text(
-              'Location ${controller.location.value}',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: size.width * 0.035,
-              ),
-            ),
-          ),
-          SizedBox(height: size.height * 0.03),
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                // TODO: Implement mark attendance
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF1B5E20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                padding: EdgeInsets.symmetric(
-                  vertical: size.height * 0.02,
-                  horizontal: size.width * 0.2,
-                ),
-              ),
-              child: Text(
-                'Mark Attendance',
-                style: TextStyle(
-                  fontSize: size.width * 0.04,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
