@@ -22,4 +22,19 @@ class AttendanceService {
       ),
     );
   }
+
+  Future<Response> getUserAttendance(String userId) async {
+    final token = storage.read("accessToken");
+    AppLogger.i("Access Token: ${token}");
+
+
+    return await _dio.get(
+      "/attendance/user-attendance/$userId",
+      options: Options(
+        headers: {
+          "Authorization": "Bearer $token",
+        },
+      ),
+    );
+  }
 }

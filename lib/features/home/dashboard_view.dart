@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smis_attendance_tracker/routes/app_routes.dart';
 
 class DashboardController extends GetxController {
   var userName = 'User Name'.obs;
@@ -265,7 +266,12 @@ class DashboardScreen extends StatelessWidget {
               itemCount: controller.directReports.length,
               itemBuilder: (context, index) {
                 final report = controller.directReports[index];
-                return _buildDirectReportCard(report, size.width);
+                return InkWell(
+                  onTap: (){
+
+                    Get.toNamed(AppRoutes.userAttendance);
+                  },
+                    child: _buildDirectReportCard(report, size.width));
               },
             ),
           ),
