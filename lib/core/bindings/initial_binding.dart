@@ -8,6 +8,6 @@ class InitialBinding extends Bindings {
   void dependencies() {
     // Register singletons for app-wide use
     Get.lazyPut<StorageService>(() => StorageService(), fenix: true);
-    Get.put(DioClient.dio, permanent: true);
+    Get.put(ApiClient(), permanent: true);
   }
 }

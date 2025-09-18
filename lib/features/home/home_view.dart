@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:smis_attendance_tracker/features/home/dashboard_view.dart';
 import 'package:smis_attendance_tracker/features/attendance/views/attendance_view.dart';
 import 'package:smis_attendance_tracker/features/profile/views/profile_page.dart';
+import 'package:smis_attendance_tracker/routes/app_routes.dart';
 import 'package:smis_attendance_tracker/widgets/attendace_bottom_sheet.dart';
 import 'home_controller.dart';
 
@@ -93,7 +94,84 @@ class HomeView extends StatelessWidget {
                       size: size.width * 0.08,
                     ),
                   ),
-                  const Icon(Icons.more_vert, color: Colors.white),
+                  InkWell(
+                    onTap: () {
+                      // Open popup menu
+                      Get.dialog(
+                        Stack(
+                          children: [
+                            // Dismiss when tapping outside
+                            GestureDetector(
+                              onTap: () => Get.back(),
+                              child: Container(color: Colors.transparent),
+                            ),
+                            Positioned(
+                              top: size.height * 0.08,
+                              right: size.width * 0.05,
+                              child: Card(
+                                elevation: 5,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    InkWell(
+                                      onTap: () {
+                                        // Get.back();
+                                        // Get.toNamed(AppRoutes.addEmployee);
+
+                                        // Navigate to Add Employee page
+                                        Get.toNamed("/add-employee");
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: Row(
+                                          children: const [
+                                            Icon(
+                                              Icons.person_add,
+                                              color: Colors.black,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text("Add Employee"),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    InkWell(
+                                      onTap: () {
+                                        Get.back(); // Close dialog
+                                        controller.logout(); // Call logout
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: const [
+                                            Icon(
+                                              Icons.logout,
+                                              color: Colors.black,
+                                            ),
+                                            SizedBox(width: 30),
+                                            Text("Logout"),
+                                            SizedBox(width: 0),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    const Divider(height: 0),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        barrierDismissible: true,
+                      );
+                    },
+                    child: const Icon(Icons.more_vert, color: Colors.white),
+                  ),
                 ],
               ),
               SizedBox(height: size.height * 0.015),
@@ -121,7 +199,7 @@ class HomeView extends StatelessWidget {
                   style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ),
-              SizedBox(height: size.height * 0.05), // leave space for button
+              SizedBox(height: size.height * 0.05),
             ],
           ),
         ),
@@ -132,18 +210,18 @@ class HomeView extends StatelessWidget {
           left: size.width * 0.2,
           right: size.width * 0.2,
           child: Visibility(
-            // visible: controller.currentIndex.value == 0, // show only on Dashboard
             child: ElevatedButton(
               onPressed: () {
-                // TODO: Mark attendance action
                 Get.bottomSheet(
-          const AttendanceViewBottomSheet(),
-          isScrollControlled: true,
-          backgroundColor: Colors.white,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-          ),
-        );
+                  const AttendanceViewBottomSheet(),
+                  isScrollControlled: true,
+                  backgroundColor: Colors.white,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(30),
+                    ),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
