@@ -23,6 +23,7 @@ class HomeView extends StatelessWidget {
           children: [
             // Sticky Top Section
             _buildTopSection(size),
+
             SizedBox(height: 30),
 
             // Scrollable page content
@@ -108,67 +109,69 @@ class HomeView extends StatelessWidget {
                             Positioned(
                               top: size.height * 0.08,
                               right: size.width * 0.05,
-                              child: Card(
-                                elevation: 5,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    InkWell(
-                                      onTap: () {
-                                        Get.toNamed("/add-employee");
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 12,
-                                        ),
-                                        child: Row(
-                                          children: const [
-                                            SizedBox(
-                                              width:
-                                                  24, // fixed width for all icons
-                                              child: Icon(
-                                                Icons.person_add,
-                                                color: Colors.black,
+                              child: IntrinsicWidth(
+                                child: Card(
+                                  elevation: 5,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      InkWell(
+                                        onTap: () {
+                                          Get.toNamed("/add-employee");
+                                        },
+                                        child: Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 12,
+                                          ),
+                                          child: Row(
+                                            children: const [
+                                              SizedBox(
+                                                width: 24,
+                                                child: Icon(
+                                                  Icons.person_add,
+                                                  color: Colors.black,
+                                                ),
                                               ),
-                                            ),
-                                            SizedBox(width: 12),
-                                            Text("Add Employee"),
-                                          ],
+                                              SizedBox(width: 12),
+                                              Text("Add Employee"),
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    InkWell(
-                                      onTap: () {
-                                        Get.back();
-                                        controller.logout();
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 12,
-                                        ),
-                                        child: Row(
-                                          children: const [
-                                            SizedBox(
-                                              width: 24, // same width as above
-                                              child: Icon(
-                                                Icons.logout,
-                                                color: Colors.black,
+                                      const Divider(height: 0),
+                                      InkWell(
+                                        onTap: () {
+                                          Get.back();
+                                          controller.logout();
+                                        },
+                                        child: Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 12,
+                                          ),
+                                          child: Row(
+                                            children: const [
+                                              SizedBox(
+                                                width: 24,
+                                                child: Icon(
+                                                  Icons.logout,
+                                                  color: Colors.black,
+                                                ),
                                               ),
-                                            ),
-                                            SizedBox(width: 12),
-                                            Text("Logout"),
-                                          ],
+                                              SizedBox(width: 12),
+                                              Text("Logout"),
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-
-                                    const Divider(height: 0),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
