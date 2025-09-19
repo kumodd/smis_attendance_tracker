@@ -1,12 +1,11 @@
 import 'package:dio/dio.dart';
-import 'package:smis_attendance_tracker/core/dio_client.dart';
-// your ApiClient wrapper
+import 'package:smis_attendance_tracker/core/dio_client.dart'; // your ApiClient wrapper
 import 'package:get_storage/get_storage.dart';
-import '../core/dio_client.dart';
 import '../utils/logger.dart';
 
 class AttendanceService {
   final Dio _client = ApiClient().client;
+  final GetStorage _storage = GetStorage();
 
   /// Get list of direct reports (users under manager)
   Future<Response> getUserList() async {
@@ -19,7 +18,7 @@ class AttendanceService {
     }
   }
 
-  /// Example: Fetch today’s attendance of a user
+  /// Fetch today’s attendance of a user
   Future<Response> getTodayAttendance(String userId) async {
     try {
       final response = await _client.get(
@@ -32,8 +31,24 @@ class AttendanceService {
       rethrow;
     }
   }
+  /// ✅ Get user attendance history with Authorization header
+  Future<Response> getAttendance() async {
+    final token = _storage.read("accessToken");
+    AppLogger.i("Access Token: ${token}");
 
-  /// Example: Mark attendance
+
+    return await _client.get(
+      "/attendance/my-attendance",
+      options: Options(
+        headers: {
+          "Authorization": "Bearer $token",
+        },
+      ),
+    );
+  }
+
+
+  /// Mark attendance
   Future<Response> markAttendance({
     required String userId,
     required String status, // Present / Absent / WFH etc.
@@ -44,16 +59,6 @@ class AttendanceService {
         data: {
           "userId": userId,
           "status": status,
-  Future<Response> getUserAttendance(String userId) async {
-    final token = storage.read("accessToken");
-    AppLogger.i("Access Token: ${token}");
-
-
-    return await _dio.get(
-      "/attendance/user-attendance/$userId",
-      options: Options(
-        headers: {
-          "Authorization": "Bearer $token",
         },
       );
       return response;
@@ -61,7 +66,26 @@ class AttendanceService {
       AppLogger.e("❌ markAttendance failed", e, st);
       rethrow;
     }
-      ),
-    );
+  }
+
+  /// Fetch full attendance history of a user
+  Future<Response> getUserAttendance(String userId) async {
+    try {
+      final token = _storage.read("accessToken");
+      AppLogger.i("Access Token: $token");
+
+      final response = await _client.get(
+        "/attendance/user-attendance/$userId",
+        options: Options(
+          headers: {
+            "Authorization": "Bearer $token",
+          },
+        ),
+      );
+      return response;
+    } catch (e, st) {
+      AppLogger.e("❌ getUserAttendance failed", e, st);
+      rethrow;
+    }
   }
 }

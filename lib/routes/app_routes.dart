@@ -5,9 +5,7 @@ import 'package:smis_attendance_tracker/features/attendance/views/user_attendanc
 import 'package:smis_attendance_tracker/features/auth/views/login_page.dart';
 import 'package:smis_attendance_tracker/features/auth/views/otp_page.dart';
 import 'package:smis_attendance_tracker/features/home/home_view.dart';
-
 import '../features/attendance/views/my_attendance.dart';
-
 
 class AppRoutes {
   static const String login = '/login';
@@ -18,16 +16,13 @@ class AppRoutes {
   static const String myAttendance = '/myAttendance';
   static const String userAttendance = '/userAttendance';
 
-
   static List<GetPage> pages = [
     GetPage(name: login, page: () => LoginView()),
     GetPage(name: otp, page: () => const OtpView()),
-    GetPage(name: attendance, page: () => AttendanceView()),
     GetPage(name: home, page: () => HomeView()),
-    GetPage(name: addEmployee, page:() => AddEmployeeScreen())
-    GetPage(name: attendance, page: () =>  AttendanceView()),
-    GetPage(name: home, page: () =>  HomeView()),
-    GetPage(name: myAttendance, page: () =>  AttendanceHistoryScreen()),
-    GetPage(name: userAttendance, page: () =>  AttendanceCalendarScreen()),
+    GetPage(name: addEmployee, page: () => AddEmployeeScreen()),
+    GetPage(name: attendance, page: () => AttendanceView()),
+    GetPage(name: myAttendance, page: () => AttendanceHistoryScreen()),
+    GetPage(name: userAttendance, page: () => AttendanceCalendarScreen()),
   ];
 }
