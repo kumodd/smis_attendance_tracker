@@ -123,6 +123,7 @@ class ApiClient {
 
         AppLogger.i("🔑 Token refreshed successfully");
         return true;
+        
       } else {
         AppLogger.e("⚠️ Refresh failed: ${response.data}");
       }

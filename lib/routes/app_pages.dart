@@ -11,5 +11,6 @@ class AppPages {
     GetPage(name: '/attendance', page: () => const AttendanceView()),
     GetPage(name: '/home', page: () =>  HomeView()),
     
+    
   ];
 }

@@ -18,7 +18,7 @@ class HomeView extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     return Obx(
-          () => Scaffold(
+      () => Scaffold(
         body: Column(
           children: [
             // Sticky Top Section
@@ -121,14 +121,21 @@ class HomeView extends StatelessWidget {
                                         Get.toNamed("/add-employee");
                                       },
                                       child: Padding(
-                                        padding: const EdgeInsets.all(12.0),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
                                         child: Row(
                                           children: const [
-                                            Icon(
-                                              Icons.person_add,
-                                              color: Colors.black,
+                                            SizedBox(
+                                              width:
+                                                  24, // fixed width for all icons
+                                              child: Icon(
+                                                Icons.person_add,
+                                                color: Colors.black,
+                                              ),
                                             ),
-                                            SizedBox(width: 10),
+                                            SizedBox(width: 12),
                                             Text("Add Employee"),
                                           ],
                                         ),
@@ -136,26 +143,30 @@ class HomeView extends StatelessWidget {
                                     ),
                                     InkWell(
                                       onTap: () {
-                                        Get.back(); // Close dialog
-                                        controller.logout(); // Call logout
+                                        Get.back();
+                                        controller.logout();
                                       },
                                       child: Padding(
-                                        padding: const EdgeInsets.all(12.0),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
                                         child: Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment.start,
                                           children: const [
-                                            Icon(
-                                              Icons.logout,
-                                              color: Colors.black,
+                                            SizedBox(
+                                              width: 24, // same width as above
+                                              child: Icon(
+                                                Icons.logout,
+                                                color: Colors.black,
+                                              ),
                                             ),
-                                            SizedBox(width: 30),
+                                            SizedBox(width: 12),
                                             Text("Logout"),
-                                            SizedBox(width: 0),
                                           ],
                                         ),
                                       ),
                                     ),
+
                                     const Divider(height: 0),
                                   ],
                                 ),
@@ -172,14 +183,14 @@ class HomeView extends StatelessWidget {
               ),
               SizedBox(height: size.height * 0.015),
               Obx(
-                    () => Text(
+                () => Text(
                   '${controller.greeting.value},',
                   style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
               SizedBox(height: size.height * 0.005),
               Obx(
-                    () => Text(
+                () => Text(
                   controller.userName.value,
                   style: TextStyle(
                     color: Colors.white,
@@ -190,7 +201,7 @@ class HomeView extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Obx(
-                    () => Text(
+                () => Text(
                   controller.userRole.value,
                   style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
@@ -206,21 +217,21 @@ class HomeView extends StatelessWidget {
           left: size.width * 0.2,
           right: size.width * 0.2,
           child: Obx(
-                () => ElevatedButton(
+            () => ElevatedButton(
               onPressed: controller.isAttendanceMarked.value
                   ? null // disabled if already marked
                   : () {
-                Get.bottomSheet(
-                  const AttendanceViewBottomSheet(),
-                  isScrollControlled: true,
-                  backgroundColor: Colors.white,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(30),
-                    ),
-                  ),
-                );
-              },
+                      Get.bottomSheet(
+                        const AttendanceViewBottomSheet(),
+                        isScrollControlled: true,
+                        backgroundColor: Colors.white,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(30),
+                          ),
+                        ),
+                      );
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF1B5E20),

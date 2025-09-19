@@ -50,6 +50,8 @@ class HomeController extends GetxController {
 
   /// Update direct reports from API response
   void setDirectReports(List<UserModel> users) {
+    
+    
     directReports.assignAll(users);
     calculateCounts();
   }
