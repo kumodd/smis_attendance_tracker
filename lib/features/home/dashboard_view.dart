@@ -2,6 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smis_attendance_tracker/features/home/home_controller.dart';
 import 'package:smis_attendance_tracker/features/home/model/user_model.dart';
+import 'package:smis_attendance_tracker/routes/app_routes.dart';
+
+class DashboardController extends GetxController {
+  var userName = 'User Name'.obs;
+  var userRole = 'User role • User designation'.obs;
+  var location = '-- --'.obs;
+
+  var directReports = [
+    {
+      'name': 'Aniruddha Mukhopadhyay',
+      'role': 'Tower Lead',
+      'designation': 'Sr. Project Manager',
+      'location': 'ITC Green Center',
+      'date': '00/00/0000',
+      'time': '10:31',
+    },
+  ].obs;
+
+  final statusCards = [
+    {'count': '7', 'label': 'Green Center', 'icon': Icons.business},
+    {'count': '5', 'label': 'Kanak Tower', 'icon': Icons.business},
+    {'count': '2', 'label': 'Work From Home', 'icon': Icons.home},
+    {'count': '0', 'label': 'On Leave', 'icon': Icons.cases_rounded},
+  ];
+}
 
 class DashboardScreen extends StatelessWidget {
   final HomeController controller = Get.put(HomeController());
@@ -163,7 +188,12 @@ class DashboardScreen extends StatelessWidget {
               itemCount: controller.directReports.length,
               itemBuilder: (context, index) {
                 final report = controller.directReports[index];
-                return _buildDirectReportCard(report, size.width);
+                return InkWell(
+                  onTap: (){
+
+                    Get.toNamed(AppRoutes.userAttendance);
+                  },
+                    child: _buildDirectReportCard(report, size.width));
               },
             ),
           ),

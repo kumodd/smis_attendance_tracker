@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smis_attendance_tracker/features/attendance/views/my_attendance.dart';
 import 'package:smis_attendance_tracker/features/home/dashboard_view.dart';
 import 'package:smis_attendance_tracker/features/attendance/views/attendance_view.dart';
 import 'package:smis_attendance_tracker/features/profile/views/profile_page.dart';
@@ -53,7 +54,7 @@ class HomeView extends StatelessWidget {
       case 0:
         return DashboardScreen();
       case 1:
-        return AttendanceView();
+        return AttendanceHistoryScreen();
       case 2:
         return const ProfileContent();
       default:

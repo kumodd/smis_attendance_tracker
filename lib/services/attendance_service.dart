@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:smis_attendance_tracker/core/dio_client.dart';
 // your ApiClient wrapper
+import 'package:get_storage/get_storage.dart';
+import '../core/dio_client.dart';
 import '../utils/logger.dart';
 
 class AttendanceService {
@@ -42,6 +44,16 @@ class AttendanceService {
         data: {
           "userId": userId,
           "status": status,
+  Future<Response> getUserAttendance(String userId) async {
+    final token = storage.read("accessToken");
+    AppLogger.i("Access Token: ${token}");
+
+
+    return await _dio.get(
+      "/attendance/user-attendance/$userId",
+      options: Options(
+        headers: {
+          "Authorization": "Bearer $token",
         },
       );
       return response;
@@ -49,5 +61,7 @@ class AttendanceService {
       AppLogger.e("❌ markAttendance failed", e, st);
       rethrow;
     }
+      ),
+    );
   }
 }
