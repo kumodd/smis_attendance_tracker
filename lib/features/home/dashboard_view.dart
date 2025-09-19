@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smis_attendance_tracker/features/attendance/controllers/attendance_controller.dart';
 import 'package:smis_attendance_tracker/features/home/home_controller.dart';
 import 'package:smis_attendance_tracker/features/home/model/user_model.dart';
 import 'package:smis_attendance_tracker/routes/app_routes.dart';
@@ -190,8 +191,14 @@ class DashboardScreen extends StatelessWidget {
                 final report = controller.directReports[index];
                 return InkWell(
                   onTap: (){
+                    // AttendanceController attendanceController=Get.put(AttendanceController());
+                    // attendanceController.userId.value=report.userId;
 
-                    Get.toNamed(AppRoutes.userAttendance);
+                    Get.toNamed(
+                      AppRoutes.userAttendance,
+                      arguments: {"userId": report.userId},
+                    );
+
                   },
                     child: _buildDirectReportCard(report, size.width));
               },

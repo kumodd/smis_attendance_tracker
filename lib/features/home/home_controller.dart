@@ -2,11 +2,14 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:smis_attendance_tracker/features/home/model/user_model.dart';
 import 'package:smis_attendance_tracker/services/attendance_service.dart';
+
+import '../attendance/controllers/attendance_controller.dart';
  // model for user
 
 class HomeController extends GetxController {
   final storage = GetStorage();
   final AttendanceService _attendanceService = AttendanceService();
+  final AttendanceController _attendanceController = Get.put(AttendanceController());
 
   // Bottom navigation
   var currentIndex = 0.obs;
@@ -89,30 +92,91 @@ class HomeController extends GetxController {
   }
 
   /// Fetch direct reports from API
+  /// Fetch direct reports from API
   Future<void> fetchDirectReports() async {
     try {
       isLoadingReports.value = true;
       final response = await _attendanceService.getUserList();
 
       if (response.statusCode == 200) {
+        _checkMyAttendance();
         final usersJson = response.data["data"]["users"] as List;
-        directReports.value =
-            usersJson.map((u) => UserModel.fromJson(u)).toList();
+        final users = usersJson.map((u) => UserModel.fromJson(u)).toList();
+
+        // Update the direct reports list
+        directReports.assignAll(users);
+
+        // Reset counts
+        greenCenterCount.value = 0;
+        kanakTowerCount.value = 0;
+        wfhCount.value = 0;
+        leaveCount.value = 0;
+
+        // Count by todayOffice field
+        for (var user in users) {
+          final office = (user.todayOffice ?? "").trim().toLowerCase();
+
+          if (office == "green center") {
+            greenCenterCount.value++;
+          } else if (office == "kanak tower") {
+            kanakTowerCount.value++;
+          } else if (office == "wfh" || office == "work from home") {
+            wfhCount.value++;
+          } else if (office == "leave" || office == "on leave") {
+            leaveCount.value++;
+          }
+        }
       } else {
         directReports.clear();
+        _resetCounts();
       }
     } catch (e) {
       directReports.clear();
+      _resetCounts();
     } finally {
       isLoadingReports.value = false;
     }
   }
+  var isAttendanceMarked = false.obs;
+
+  Future<void> _checkMyAttendance() async {
+    try {
+      // call fetchAttendance (no return value, just updates attendanceList)
+      await _attendanceController.fetchAttendance();
+
+      final records = _attendanceController.attendanceList;
+
+      final today = DateTime.now().toLocal();
+      final todayStr =
+          "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+
+      final hasToday = records.any((record) {
+        final captureDate = record["captureDate"]?.toString() ?? "";
+        return captureDate.startsWith(todayStr);
+      });
+
+      isAttendanceMarked.value = hasToday;
+    } catch (e) {
+      isAttendanceMarked.value = false;
+    }
+  }
+
+  /// Helper to reset counts
+  void _resetCounts() {
+    greenCenterCount.value = 0;
+    kanakTowerCount.value = 0;
+    wfhCount.value = 0;
+    leaveCount.value = 0;
+  }
+
 
   /// Refresh user data dynamically
   void refreshUserData() {
     _loadUserData();
     fetchDirectReports();
   }
+
+
 
   /// Change bottom navigation tab
   void changeTab(int index) {
@@ -124,4 +188,9 @@ class HomeController extends GetxController {
     storage.erase();
     Get.offAllNamed("/login"); // or AppRoutes.login
   }
+
+
+
+
+
 }

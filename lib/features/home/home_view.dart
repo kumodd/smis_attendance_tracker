@@ -4,7 +4,6 @@ import 'package:smis_attendance_tracker/features/attendance/views/my_attendance.
 import 'package:smis_attendance_tracker/features/home/dashboard_view.dart';
 import 'package:smis_attendance_tracker/features/attendance/views/attendance_view.dart';
 import 'package:smis_attendance_tracker/features/profile/views/profile_page.dart';
-import 'package:smis_attendance_tracker/routes/app_routes.dart';
 import 'package:smis_attendance_tracker/widgets/attendace_bottom_sheet.dart';
 import 'home_controller.dart';
 
@@ -19,7 +18,7 @@ class HomeView extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     return Obx(
-      () => Scaffold(
+          () => Scaffold(
         body: Column(
           children: [
             // Sticky Top Section
@@ -119,10 +118,6 @@ class HomeView extends StatelessWidget {
                                   children: [
                                     InkWell(
                                       onTap: () {
-                                        // Get.back();
-                                        // Get.toNamed(AppRoutes.addEmployee);
-
-                                        // Navigate to Add Employee page
                                         Get.toNamed("/add-employee");
                                       },
                                       child: Padding(
@@ -148,7 +143,7 @@ class HomeView extends StatelessWidget {
                                         padding: const EdgeInsets.all(12.0),
                                         child: Row(
                                           mainAxisAlignment:
-                                              MainAxisAlignment.start,
+                                          MainAxisAlignment.start,
                                           children: const [
                                             Icon(
                                               Icons.logout,
@@ -177,14 +172,14 @@ class HomeView extends StatelessWidget {
               ),
               SizedBox(height: size.height * 0.015),
               Obx(
-                () => Text(
+                    () => Text(
                   '${controller.greeting.value},',
                   style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
               SizedBox(height: size.height * 0.005),
               Obx(
-                () => Text(
+                    () => Text(
                   controller.userName.value,
                   style: TextStyle(
                     color: Colors.white,
@@ -195,7 +190,7 @@ class HomeView extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Obx(
-                () => Text(
+                    () => Text(
                   controller.userRole.value,
                   style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
@@ -210,9 +205,11 @@ class HomeView extends StatelessWidget {
           bottom: -size.height * 0.03,
           left: size.width * 0.2,
           right: size.width * 0.2,
-          child: Visibility(
-            child: ElevatedButton(
-              onPressed: () {
+          child: Obx(
+                () => ElevatedButton(
+              onPressed: controller.isAttendanceMarked.value
+                  ? null // disabled if already marked
+                  : () {
                 Get.bottomSheet(
                   const AttendanceViewBottomSheet(),
                   isScrollControlled: true,
@@ -227,6 +224,8 @@ class HomeView extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF1B5E20),
+                disabledBackgroundColor: Colors.grey.shade300,
+                disabledForegroundColor: Colors.grey.shade600,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),

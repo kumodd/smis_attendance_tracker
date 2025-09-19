@@ -5,7 +5,6 @@ import '../utils/logger.dart';
 
 class AttendanceService {
   final Dio _client = ApiClient().client;
-  final GetStorage _storage = GetStorage();
 
   /// Get list of direct reports (users under manager)
   Future<Response> getUserList() async {
@@ -18,49 +17,38 @@ class AttendanceService {
     }
   }
 
-  /// Fetch today’s attendance of a user
-  Future<Response> getTodayAttendance(String userId) async {
-    try {
-      final response = await _client.get(
-        "/attendance/today",
-        queryParameters: {"userId": userId},
-      );
-      return response;
-    } catch (e, st) {
-      AppLogger.e("❌ getTodayAttendance failed", e, st);
-      rethrow;
-    }
-  }
+
   /// ✅ Get user attendance history with Authorization header
   Future<Response> getAttendance() async {
-    final token = _storage.read("accessToken");
-    AppLogger.i("Access Token: ${token}");
 
 
     return await _client.get(
       "/attendance/my-attendance",
-      options: Options(
-        headers: {
-          "Authorization": "Bearer $token",
-        },
-      ),
     );
   }
 
 
   /// Mark attendance
-  Future<Response> markAttendance({
-    required String userId,
-    required String status, // Present / Absent / WFH etc.
+  Future<Response> markAttendance({ // Present / Absent / WFH etc.
+    required double latitude,
+    required double longitude,
+    String? officeName, // optional → when matched with office
   }) async {
     try {
+      final requestBody = {
+          "gpsLat": latitude,
+          "gpsLng": longitude,
+        if (officeName != null) "officeName": officeName, // ✅ add only if matched
+      };
+
+      AppLogger.i("📤 markAttendance Request: $requestBody");
+
       final response = await _client.post(
-        "/attendance/mark",
-        data: {
-          "userId": userId,
-          "status": status,
-        },
+        "/attendance/mark-attendance",
+        data: requestBody,
       );
+
+      AppLogger.i("✅ markAttendance Response: ${response.data}");
       return response;
     } catch (e, st) {
       AppLogger.e("❌ markAttendance failed", e, st);
@@ -68,19 +56,12 @@ class AttendanceService {
     }
   }
 
+
   /// Fetch full attendance history of a user
   Future<Response> getUserAttendance(String userId) async {
     try {
-      final token = _storage.read("accessToken");
-      AppLogger.i("Access Token: $token");
-
       final response = await _client.get(
         "/attendance/user-attendance/$userId",
-        options: Options(
-          headers: {
-            "Authorization": "Bearer $token",
-          },
-        ),
       );
       return response;
     } catch (e, st) {

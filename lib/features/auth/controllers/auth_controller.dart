@@ -67,6 +67,23 @@ class LoginController extends GetxController {
 
         AppLogger.i("User persisted: ${body["data"]["user"]}");
 
+        // ✅ Save office locations in normalized format
+        final offices = body["data"]["offices"] ?? [];
+        final geoFence = body["data"]["settings"]["geoFence"] ?? 100; // fallback 100m
+
+        final List<Map<String, dynamic>> locations = offices.map<Map<String, dynamic>>((office) {
+          return {
+            "name": office["officeName"],          // String
+            "lat": office["gpsLat"],               // double
+            "lng": office["gpsLon"],               // double
+            "range": geoFence                      // int
+          };
+        }).toList();
+
+        storage.write("locations", locations);  // ✅ This will be used by AttendanceController
+
+        AppLogger.i("Office locations saved: $locations");
+
         Get.snackbar("Success", "OTP verified");
         Get.offAllNamed(AppRoutes.home);
       } else {

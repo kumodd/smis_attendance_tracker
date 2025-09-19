@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smis_attendance_tracker/utils/logger.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:intl/intl.dart';
 
 import '../controllers/attendance_controller.dart';
 
 class AttendanceCalendarScreen extends StatelessWidget {
-  final AttendanceController attendanceController = Get.put(AttendanceController());
+  final AttendanceController attendanceController =
+  Get.put(AttendanceController());
+  final String userId;
+
+  AttendanceCalendarScreen({super.key})
+      : userId = (Get.arguments as Map<String, dynamic>)["userId"].toString();
 
   final Map<String, Color> officeColors = {
     "ITC GREEN CENTER": const Color(0xFF73D28C),
@@ -21,10 +26,15 @@ class AttendanceCalendarScreen extends StatelessWidget {
     "WORK FROM HOME": "Work From Home",
     "ON LEAVE": "On Leave",
   };
-
   @override
   Widget build(BuildContext context) {
-    attendanceController.fetchUserAttendance("45152");
+    // fetch user attendance once when screen opens
+    final args = Get.arguments as Map<String, dynamic>;
+    final userId = args["userId"];
+    AppLogger.i("userId: $userId");
+
+    attendanceController.
+    fetchUserAttendance(userId);
 
     return Scaffold(
       appBar: AppBar(
@@ -48,7 +58,10 @@ class AttendanceCalendarScreen extends StatelessWidget {
               ),
             );
           }
-          final records = attendanceController.attendanceMap;
+
+          // attendanceMap is expected as Map<DateTime, String>
+          final Map<DateTime, String> records =
+          attendanceController.attendanceMap.cast<DateTime, String>();
 
           return Container(
             decoration: BoxDecoration(
@@ -72,19 +85,23 @@ class AttendanceCalendarScreen extends StatelessWidget {
                 ),
                 TableCalendar(
                   focusedDay: DateTime.now(),
-                  firstDay: DateTime(DateTime.now().year, DateTime.now().month, 1),
-                  lastDay: DateTime(DateTime.now().year, DateTime.now().month + 1, 0),
+                  firstDay:
+                  DateTime(DateTime.now().year, DateTime.now().month, 1),
+                  lastDay: DateTime(
+                      DateTime.now().year, DateTime.now().month + 1, 0),
                   calendarFormat: CalendarFormat.month,
                   calendarStyle: const CalendarStyle(
                     todayDecoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      // Use default today color or transparent to not specially highlight
                       color: Colors.transparent,
                     ),
                     todayTextStyle: TextStyle(color: Colors.black),
                   ),
-                  daysOfWeekStyle: DaysOfWeekStyle(
-                    weekendStyle: TextStyle(fontWeight: FontWeight.w600, color: Colors.redAccent),
+                  daysOfWeekStyle: const DaysOfWeekStyle(
+                    weekendStyle: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.redAccent,
+                    ),
                   ),
                   headerStyle: HeaderStyle(
                     formatButtonVisible: false,
@@ -95,17 +112,25 @@ class AttendanceCalendarScreen extends StatelessWidget {
                     ),
                   ),
                   startingDayOfWeek: StartingDayOfWeek.sunday,
-                  availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+                  availableCalendarFormats: const {
+                    CalendarFormat.month: 'Month'
+                  },
                   calendarBuilders: CalendarBuilders(
                     defaultBuilder: (context, date, _) {
-                      final DateTime key = DateTime(date.year, date.month, date.day);
-                      final type = records[key];
+                      final DateTime key =
+                      DateTime(date.year, date.month, date.day);
+                      final String? type = records[key];
 
                       if (type != null) {
-                        final color = officeColors.entries.firstWhere(
-                                (element) => element.key.toUpperCase() ==
-                                type.toString().split('.').last.toUpperCase(),
-                            orElse: () => MapEntry("", Colors.transparent)).value;
+                        final color = officeColors.entries
+                            .firstWhere(
+                              (element) =>
+                          element.key.toUpperCase() ==
+                              type.toUpperCase(),
+                          orElse: () =>
+                          const MapEntry("", Colors.transparent),
+                        )
+                            .value;
 
                         return Center(
                           child: Container(
@@ -134,7 +159,8 @@ class AttendanceCalendarScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: officeLabels.entries.map((e) {
