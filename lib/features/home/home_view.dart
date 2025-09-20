@@ -143,7 +143,7 @@ class HomeView extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                      const Divider(height: 0),
+
                                       InkWell(
                                         onTap: () {
                                           Get.back();

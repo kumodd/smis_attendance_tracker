@@ -10,7 +10,6 @@ class AppPages {
     GetPage(name: '/otp', page: () => const OtpView()),
     GetPage(name: '/attendance', page: () => const AttendanceView()),
     GetPage(name: '/home', page: () =>  HomeView()),
-    
-    
+  
   ];
 }
