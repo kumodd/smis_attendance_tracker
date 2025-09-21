@@ -5,37 +5,37 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../controllers/attendance_controller.dart';
 
-class AttendanceCalendarScreen extends StatelessWidget {
-  final AttendanceController attendanceController =
-  Get.put(AttendanceController());
-  final String userId;
+class AttendanceCalendarScreen extends StatefulWidget {
+  const AttendanceCalendarScreen({super.key});
 
-  AttendanceCalendarScreen({super.key})
-      : userId = (Get.arguments as Map<String, dynamic>)["userId"].toString();
-
-  final Map<String, Color> officeColors = {
-    "ITC GREEN CENTER": const Color(0xFF73D28C),
-    "KANAK TOWER": Colors.blue,
-    "WORK FROM HOME": Colors.orange,
-    "ON LEAVE": Colors.redAccent,
-  };
-
-  final Map<String, String> officeLabels = {
-    "ITC GREEN CENTER": "ITC Green Center",
-    "KANAK TOWER": "Kanak Tower",
-    "WORK FROM HOME": "Work From Home",
-    "ON LEAVE": "On Leave",
-  };
   @override
-  Widget build(BuildContext context) {
-    // fetch user attendance once when screen opens
+  State<AttendanceCalendarScreen> createState() =>
+      _AttendanceCalendarScreenState();
+}
+
+class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
+  final AttendanceController attendanceController = Get.put(
+    AttendanceController(),
+  );
+
+  late DateTime _focusedDay;
+  DateTime? _selectedDay;
+
+  @override
+  void initState() {
+    super.initState();
     final args = Get.arguments as Map<String, dynamic>;
     final userId = args["userId"];
     AppLogger.i("userId: $userId");
 
-    attendanceController.
-    fetchUserAttendance(userId);
+    attendanceController.fetchUserAttendance(userId);
 
+    _focusedDay = DateTime.now();
+    _selectedDay = DateTime.now();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Attendance History"),
@@ -59,18 +59,17 @@ class AttendanceCalendarScreen extends StatelessWidget {
             );
           }
 
-          // attendanceMap is expected as Map<DateTime, String>
-          final Map<DateTime, String> records =
-          attendanceController.attendanceMap.cast<DateTime, String>();
-
           return Container(
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2)],
+              boxShadow: const [
+                BoxShadow(color: Colors.black12, blurRadius: 2),
+              ],
             ),
             child: Column(
               children: [
+                // Title
                 Container(
                   alignment: Alignment.topLeft,
                   padding: const EdgeInsets.only(left: 16, top: 12),
@@ -83,13 +82,63 @@ class AttendanceCalendarScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+
+                // Custom Header with arrows
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios, size: 18),
+                        onPressed: () {
+                          setState(() {
+                            _focusedDay = DateTime(
+                              _focusedDay.year,
+                              _focusedDay.month - 1,
+                              1,
+                            );
+                          });
+                        },
+                      ),
+                      Text(
+                        "${_monthName(_focusedDay.month)}, ${_focusedDay.year}",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.arrow_forward_ios, size: 18),
+                        onPressed: () {
+                          setState(() {
+                            _focusedDay = DateTime(
+                              _focusedDay.year,
+                              _focusedDay.month + 1,
+                              1,
+                            );
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Calendar
                 TableCalendar(
-                  focusedDay: DateTime.now(),
-                  firstDay:
-                  DateTime(DateTime.now().year, DateTime.now().month, 1),
-                  lastDay: DateTime(
-                      DateTime.now().year, DateTime.now().month + 1, 0),
+                  focusedDay: _focusedDay,
+                  firstDay: DateTime(_focusedDay.year, _focusedDay.month, 1),
+                  lastDay: DateTime(_focusedDay.year, _focusedDay.month + 1, 0),
+                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                   calendarFormat: CalendarFormat.month,
+                  startingDayOfWeek: StartingDayOfWeek.sunday,
+                  availableCalendarFormats: const {
+                    CalendarFormat.month: 'Month',
+                  },
+                  headerVisible: false,
                   calendarStyle: const CalendarStyle(
                     todayDecoration: BoxDecoration(
                       shape: BoxShape.circle,
@@ -97,56 +146,53 @@ class AttendanceCalendarScreen extends StatelessWidget {
                     ),
                     todayTextStyle: TextStyle(color: Colors.black),
                   ),
-                  daysOfWeekStyle: const DaysOfWeekStyle(
-                    weekendStyle: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.redAccent,
-                    ),
-                  ),
-                  headerStyle: HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: true,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  startingDayOfWeek: StartingDayOfWeek.sunday,
-                  availableCalendarFormats: const {
-                    CalendarFormat.month: 'Month'
-                  },
                   calendarBuilders: CalendarBuilders(
                     defaultBuilder: (context, date, _) {
-                      final DateTime key =
-                      DateTime(date.year, date.month, date.day);
-                      final String? type = records[key];
+                      final DateTime key = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                      );
+                      final type = attendanceController.attendanceMap[key];
 
                       if (type != null) {
-                        final color = officeColors.entries
-                            .firstWhere(
-                              (element) =>
-                          element.key.toUpperCase() ==
-                              type.toUpperCase(),
-                          orElse: () =>
-                          const MapEntry("", Colors.transparent),
-                        )
-                            .value;
+                        Color color;
+                        switch (type) {
+                          case AttendanceType.greenCenter:
+                            color = const Color(0xFF73D28C);
+                            break;
+                          case AttendanceType.kanakTower:
+                            color = Colors.blue;
+                            break;
+                          case AttendanceType.wfh:
+                            color = Colors.orange;
+                            break;
+                          case AttendanceType.leave:
+                            color = Colors.redAccent;
+                            break;
+                          case AttendanceType.currentDate:
+                            color = Colors.black87;
+                            break;
+                        }
 
                         return Center(
                           child: Container(
-                            width: 34,
-                            height: 34,
+                            width: 36,
+                            height: 36,
                             decoration: BoxDecoration(
-                              color: color.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(20),
+                              color: type == AttendanceType.currentDate
+                                  ? color
+                                  : color.withOpacity(0.2),
+                              shape: BoxShape.circle,
                             ),
                             child: Center(
                               child: Text(
                                 '${date.day}',
                                 style: TextStyle(
-                                  color: color,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15,
+                                  color: type == AttendanceType.currentDate
+                                      ? Colors.white
+                                      : color,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
@@ -157,35 +203,25 @@ class AttendanceCalendarScreen extends StatelessWidget {
                     },
                   ),
                 ),
+
                 const SizedBox(height: 10),
+
+                // Legend
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: officeLabels.entries.map((e) {
-                      return Row(
-                        children: [
-                          Container(
-                            width: 15,
-                            height: 15,
-                            decoration: BoxDecoration(
-                              color: officeColors[e.key],
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            e.value,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[700],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
+                    horizontal: 14,
+                    vertical: 4,
+                  ),
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 8,
+                    children: [
+                      _legendItem(Colors.black87, "Current date"),
+                      _legendItem(const Color(0xFF73D28C), "ITC Green Center"),
+                      _legendItem(Colors.orange, "Work From Home"),
+                      _legendItem(Colors.blue, "Kanak Tower"),
+                      _legendItem(Colors.redAccent, "On Leave"),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -195,5 +231,39 @@ class AttendanceCalendarScreen extends StatelessWidget {
         }),
       ),
     );
+  }
+
+  Widget _legendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+      ],
+    );
+  }
+
+  String _monthName(int month) {
+    const months = [
+      "",
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    return months[month];
   }
 }

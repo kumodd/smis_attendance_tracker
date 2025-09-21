@@ -6,7 +6,8 @@ class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
 
   @override
-  State<AttendanceHistoryScreen> createState() => _AttendanceHistoryScreenState();
+  State<AttendanceHistoryScreen> createState() =>
+      _AttendanceHistoryScreenState();
 }
 
 class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
@@ -23,7 +24,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Obx(() {
+    return Scaffold(
+      body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -33,8 +35,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(controller.errorMessage.value,
-                    style: const TextStyle(color: Colors.red)),
+                Text(
+                  controller.errorMessage.value,
+                  style: const TextStyle(color: Colors.red),
+                ),
                 const SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: controller.fetchAttendance,
@@ -61,8 +65,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               final date = dateTime.toString().split(" ")[0];
               final time = dateTime.toString().split(" ")[1].substring(0, 5);
 
-              final isWorkFromHome =
-              officeName.toLowerCase().contains("home");
+              final isWorkFromHome = officeName.toLowerCase().contains("home");
               final icon = isWorkFromHome
                   ? Icons.home_rounded
                   : Icons.apartment_rounded;

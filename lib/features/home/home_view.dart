@@ -237,6 +237,8 @@ class HomeView extends StatelessWidget {
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
+                side: const BorderSide(color: Color(0xFF1B5E20), width: 1),
+
                 foregroundColor: const Color(0xFF1B5E20),
                 disabledBackgroundColor: Colors.grey.shade300,
                 disabledForegroundColor: Colors.grey.shade600,
@@ -244,7 +246,7 @@ class HomeView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(30),
                 ),
                 padding: EdgeInsets.symmetric(vertical: size.height * 0.02),
-                elevation: 5,
+                elevation: 0,
               ),
               child: Text(
                 'Mark Attendance',
