@@ -17,28 +17,24 @@ class AttendanceService {
     }
   }
 
-
   /// ✅ Get user attendance history with Authorization header
   Future<Response> getAttendance() async {
-
-
-    return await _client.get(
-      "/attendance/my-attendance",
-    );
+    return await _client.get("/attendance/my-attendance");
   }
 
-
   /// Mark attendance
-  Future<Response> markAttendance({ // Present / Absent / WFH etc.
+  Future<Response> markAttendance({
+    // Present / Absent / WFH etc.
     required double latitude,
     required double longitude,
     String? officeName, // optional → when matched with office
   }) async {
     try {
       final requestBody = {
-          "gpsLat": latitude,
-          "gpsLng": longitude,
-        if (officeName != null) "officeName": officeName, // ✅ add only if matched
+        "gpsLat": latitude,
+        "gpsLng": longitude,
+        if (officeName != null)
+          "officeName": officeName, // ✅ add only if matched
       };
 
       AppLogger.i("📤 markAttendance Request: $requestBody");
@@ -56,13 +52,10 @@ class AttendanceService {
     }
   }
 
-
   /// Fetch full attendance history of a user
   Future<Response> getUserAttendance(String userId) async {
     try {
-      final response = await _client.get(
-        "/attendance/user-attendance/$userId",
-      );
+      final response = await _client.get("/attendance/user-attendance/$userId");
       return response;
     } catch (e, st) {
       AppLogger.e("❌ getUserAttendance failed", e, st);
