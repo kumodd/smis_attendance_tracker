@@ -22,7 +22,7 @@ class AppRoutes {
     GetPage(name: home, page: () => HomeView()),
     GetPage(name: addEmployee, page: () => AddEmployeeScreen()),
     GetPage(name: attendance, page: () => AttendanceView()),
-    GetPage(name: myAttendance, page: () => AttendanceHistoryScreen()),
+    GetPage(name: myAttendance, page: () => MyAttendanceScreen()),
     GetPage(name: userAttendance, page: () => AttendanceCalendarScreen()),
   ];
 }

@@ -31,6 +31,7 @@ class ApiClient {
       InterceptorsWrapper(
         onRequest: (options, handler) {
           final token = storage.read("accessToken");
+          AppLogger.d("Stored Token: $token");
           if (token != null) {
             options.headers["Authorization"] = "Bearer $token";
           }
@@ -42,7 +43,9 @@ class ApiClient {
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          AppLogger.i("✅ [RESPONSE] ${response.statusCode} ${response.requestOptions.uri}");
+          AppLogger.i(
+            "✅ [RESPONSE] ${response.statusCode} ${response.requestOptions.uri}",
+          );
           AppLogger.d("Response Data: ${response.data}");
           return handler.next(response);
         },
@@ -73,7 +76,8 @@ class ApiClient {
 
               if (refreshed) {
                 final newToken = storage.read("accessToken");
-                error.requestOptions.headers["Authorization"] = "Bearer $newToken";
+                error.requestOptions.headers["Authorization"] =
+                    "Bearer $newToken";
 
                 AppLogger.i("🔁 Retrying request with new token...");
                 final cloneReq = await _dio.fetch(error.requestOptions);
@@ -88,7 +92,8 @@ class ApiClient {
               await _refreshCompleter?.future;
 
               final newToken = storage.read("accessToken");
-              error.requestOptions.headers["Authorization"] = "Bearer $newToken";
+              error.requestOptions.headers["Authorization"] =
+                  "Bearer $newToken";
               final cloneReq = await _dio.fetch(error.requestOptions);
               return handler.resolve(cloneReq);
             }
@@ -112,9 +117,10 @@ class ApiClient {
 
     try {
       AppLogger.i("🔄 Calling refresh token API...");
-      final response = await _dio.post("/auth/refresh-token", data: {
-        "refreshToken": refreshToken,
-      });
+      final response = await _dio.post(
+        "/auth/refresh-token",
+        data: {"refreshToken": refreshToken},
+      );
 
       if (response.statusCode == 200) {
         final data = response.data["data"];
@@ -123,7 +129,6 @@ class ApiClient {
 
         AppLogger.i("🔑 Token refreshed successfully");
         return true;
-        
       } else {
         AppLogger.e("⚠️ Refresh failed: ${response.data}");
       }

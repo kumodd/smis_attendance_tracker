@@ -1,49 +1,112 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:smis_attendance_tracker/utils/logger.dart';
+import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../controllers/attendance_controller.dart';
 
-class AttendanceCalendarScreen extends StatefulWidget {
-  const AttendanceCalendarScreen({super.key});
+class MyAttendanceScreen extends StatefulWidget {
+  const MyAttendanceScreen({super.key});
 
   @override
-  State<AttendanceCalendarScreen> createState() =>
-      _AttendanceCalendarScreenState();
+  State<MyAttendanceScreen> createState() => _MyAttendanceScreenState();
 }
 
-class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
-  final AttendanceController attendanceController = Get.put(
-    AttendanceController(),
-  );
+class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
+  late final AttendanceController attendanceController;
 
   late DateTime _focusedDay;
   DateTime? _selectedDay;
+  String? _userId;
 
   @override
   void initState() {
     super.initState();
-    final args = Get.arguments as Map<String, dynamic>;
-    final userId = args["userId"];
-    AppLogger.i("userId: $userId");
 
-    attendanceController.fetchUserAttendance(userId);
+    // Resolve or create controller once to avoid multiple puts across navigations
+    if (Get.isRegistered<AttendanceController>()) {
+      attendanceController = Get.find<AttendanceController>();
+    } else {
+      attendanceController = Get.put(AttendanceController());
+    } // [web:5][web:16]
+
+    final args = Get.arguments;
+    _userId = (args != null && args is Map<String, dynamic>)
+        ? args['userId']?.toString()
+        : null; // [web:21][web:23]
+
+    if (_userId != null && _userId!.isNotEmpty) {
+      attendanceController.fetchUserAttendance(_userId!);
+    }
 
     _focusedDay = DateTime.now();
     _selectedDay = DateTime.now();
   }
 
+  // Color mapping for AttendanceType
+  Color _colorForType(AttendanceType type) {
+    switch (type) {
+      case AttendanceType.greenCenter:
+        return const Color(0xFF73D28C);
+      case AttendanceType.kanakTower:
+        return Colors.blue;
+      case AttendanceType.wfh:
+        return Colors.orange;
+      case AttendanceType.leave:
+        return Colors.redAccent;
+      case AttendanceType.currentDate:
+        return Colors.purple;
+    }
+  }
+
+  String _labelForType(AttendanceType type) {
+    switch (type) {
+      case AttendanceType.greenCenter:
+        return "ITC Green Center";
+      case AttendanceType.kanakTower:
+        return "Kanak Tower";
+      case AttendanceType.wfh:
+        return "Work From Home";
+      case AttendanceType.leave:
+        return "On Leave";
+      case AttendanceType.currentDate:
+        return "Today";
+    }
+  }
+
+  // Robust parse for server captureDate "yyyy-MM-dd HH:mm:ss.S" (and fallbacks)
+  DateTime? _parseServerDate(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final patterns = <String>[
+      "yyyy-MM-dd HH:mm:ss.S",
+      "yyyy-MM-dd HH:mm:ss",
+      "yyyy-MM-dd",
+    ];
+    for (final p in patterns) {
+      try {
+        return DateFormat(p).parse(raw, true).toLocal();
+      } catch (_) {}
+    }
+    return DateTime.tryParse(raw)?.toLocal();
+  } // [web:18]
+
+  // Optional office string color (used in detail list if needed)
+  Color _getStatusColorByOffice(String office) {
+    final lower = office.toLowerCase();
+    if (lower.contains("green")) return const Color(0xFF73D28C);
+    if (lower.contains("kanak")) return Colors.blue;
+    if (lower.contains("wfh") || lower.contains("work from home"))
+      return Colors.orange;
+    if (lower.contains("leave")) return Colors.redAccent;
+    if (lower.contains("holiday")) return Colors.purple;
+    if (lower.contains("present")) return Colors.green;
+    if (lower.contains("absent")) return Colors.grey;
+    return Colors.grey;
+  } // [web:6][web:17]
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Attendance History"),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 1,
-        foregroundColor: Colors.black87,
-      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8),
         child: Obx(() {
@@ -59,6 +122,9 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
             );
           }
 
+          // Use the controller-provided map: DateTime -> AttendanceType
+          final map = attendanceController.attendanceMap;
+
           return Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -69,21 +135,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
             ),
             child: Column(
               children: [
-                // Title
-                Container(
-                  alignment: Alignment.topLeft,
-                  padding: const EdgeInsets.only(left: 16, top: 12),
-                  child: Text(
-                    "Attendance history",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ),
-
-                // Custom Header with arrows
+                // Month header with arrows
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -139,6 +191,13 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                     CalendarFormat.month: 'Month',
                   },
                   headerVisible: false,
+                  onDaySelected: (selectedDay, focusedDay) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                    _showAttendanceForDay(selectedDay);
+                  },
                   calendarStyle: const CalendarStyle(
                     todayDecoration: BoxDecoration(
                       shape: BoxShape.circle,
@@ -148,79 +207,127 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                   ),
                   calendarBuilders: CalendarBuilders(
                     defaultBuilder: (context, date, _) {
-                      final DateTime key = DateTime(
-                        date.year,
-                        date.month,
-                        date.day,
+                      final key = DateTime(date.year, date.month, date.day);
+                      final type = map[key];
+
+                      final isToday = isSameDay(
+                        key,
+                        DateTime(
+                          DateTime.now().year,
+                          DateTime.now().month,
+                          DateTime.now().day,
+                        ),
                       );
-                      final type = attendanceController.attendanceMap[key];
 
-                      if (type != null) {
-                        Color color;
-                        switch (type) {
-                          case AttendanceType.greenCenter:
-                            color = const Color(0xFF73D28C);
-                            break;
-                          case AttendanceType.kanakTower:
-                            color = Colors.blue;
-                            break;
-                          case AttendanceType.wfh:
-                            color = Colors.orange;
-                            break;
-                          case AttendanceType.leave:
-                            color = Colors.redAccent;
-                            break;
-                          case AttendanceType.currentDate:
-                            color = Colors.black87;
-                            break;
-                        }
-
+                      if (type != null && type != AttendanceType.currentDate) {
+                        final color = _colorForType(type);
                         return Center(
                           child: Container(
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: type == AttendanceType.currentDate
-                                  ? color
-                                  : color.withOpacity(0.2),
+                              color: color,
                               shape: BoxShape.circle,
                             ),
-                            child: Center(
-                              child: Text(
-                                '${date.day}',
-                                style: TextStyle(
-                                  color: type == AttendanceType.currentDate
-                                      ? Colors.white
-                                      : color,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '${date.day}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                         );
                       }
+
+                      if (isToday) {
+                        return Center(
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: _colorForType(
+                                  AttendanceType.currentDate,
+                                ),
+                                width: 2,
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '${date.day}',
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+
                       return null;
                     },
+                    markerBuilder: (context, date, events) {
+                      final key = DateTime(date.year, date.month, date.day);
+                      final isToday = isSameDay(
+                        key,
+                        DateTime(
+                          DateTime.now().year,
+                          DateTime.now().month,
+                          DateTime.now().day,
+                        ),
+                      );
+                      if (isToday) {
+                        return Positioned(
+                          bottom: 4,
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: _colorForType(AttendanceType.currentDate),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
                   ),
-                ),
+                ), // [web:4]
 
                 const SizedBox(height: 10),
 
                 // Legend
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Wrap(
                     spacing: 16,
                     runSpacing: 8,
                     children: [
-                      _legendItem(Colors.black87, "Current date"),
-                      _legendItem(const Color(0xFF73D28C), "ITC Green Center"),
-                      _legendItem(Colors.orange, "Work From Home"),
-                      _legendItem(Colors.blue, "Kanak Tower"),
-                      _legendItem(Colors.redAccent, "On Leave"),
+                      _legendItem(
+                        _colorForType(AttendanceType.greenCenter),
+                        _labelForType(AttendanceType.greenCenter),
+                      ),
+                      _legendItem(
+                        _colorForType(AttendanceType.wfh),
+                        _labelForType(AttendanceType.wfh),
+                      ),
+                      _legendItem(
+                        _colorForType(AttendanceType.kanakTower),
+                        _labelForType(AttendanceType.kanakTower),
+                      ),
+                      _legendItem(
+                        _colorForType(AttendanceType.leave),
+                        _labelForType(AttendanceType.leave),
+                      ),
+                      _legendItem(
+                        _colorForType(AttendanceType.currentDate),
+                        _labelForType(AttendanceType.currentDate),
+                      ),
                     ],
                   ),
                 ),
@@ -245,6 +352,96 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
         const SizedBox(width: 6),
         Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
       ],
+    );
+  }
+
+  void _showAttendanceForDay(DateTime day) {
+    final rawList = attendanceController.attendanceList;
+    final selectedKey = DateTime(day.year, day.month, day.day);
+
+    final matches = <Map<String, String>>[];
+
+    for (final item in rawList) {
+      String? captureDateStr;
+      String? officeName;
+      String? userId;
+
+      if (item is Map) {
+        captureDateStr = item['captureDate']?.toString();
+        officeName = item['officeName']?.toString();
+        userId = item['userId']?.toString();
+      } else {
+        try {
+          captureDateStr = (item as dynamic).captureDate?.toString();
+        } catch (_) {}
+        try {
+          officeName = (item as dynamic).officeName?.toString();
+        } catch (_) {}
+        try {
+          userId = (item as dynamic).userId?.toString();
+        } catch (_) {}
+      }
+
+      final parsed = _parseServerDate(captureDateStr);
+      if (parsed != null) {
+        final key = DateTime(parsed.year, parsed.month, parsed.day);
+        if (key == selectedKey) {
+          matches.add({
+            'date': DateFormat("hh:mm a • dd MMM yyyy").format(parsed),
+            'office': officeName ?? 'Unknown',
+            'userId': userId ?? '',
+          });
+        }
+      }
+    } // [web:18]
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        if (matches.isEmpty) {
+          // If it’s today but no records, still show minimal context
+          final type = attendanceController.attendanceMap[selectedKey];
+          final isTodayOnly = type == AttendanceType.currentDate;
+          if (isTodayOnly) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              height: 140,
+              child: const Center(
+                child: Text("No attendance record yet.\nMarked as Today."),
+              ),
+            );
+          }
+
+          return Container(
+            padding: const EdgeInsets.all(16),
+            height: 120,
+            child: const Center(child: Text("No attendance for selected day.")),
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: matches.map((m) {
+              final office = m['office'] ?? '';
+              final color = _getStatusColorByOffice(office);
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: color,
+                  foregroundColor: Colors.white,
+                  child: const Icon(Icons.event_available),
+                ),
+                title: Text(office),
+                subtitle: Text(m['date'] ?? ''),
+                trailing: (m['userId'] != null && m['userId']!.isNotEmpty)
+                    ? Text(m['userId']!)
+                    : null,
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 

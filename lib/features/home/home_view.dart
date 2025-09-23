@@ -4,66 +4,106 @@ import 'package:smis_attendance_tracker/features/attendance/views/my_attendance.
 import 'package:smis_attendance_tracker/features/home/dashboard_view.dart';
 import 'package:smis_attendance_tracker/features/attendance/views/attendance_view.dart';
 import 'package:smis_attendance_tracker/features/profile/views/profile_page.dart';
+import 'package:smis_attendance_tracker/utils/logger.dart';
 import 'package:smis_attendance_tracker/widgets/attendace_bottom_sheet.dart';
 import 'home_controller.dart';
 
 class HomeView extends StatelessWidget {
   HomeView({super.key});
 
-  // Single controller instance
   final HomeController controller = Get.put(HomeController());
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    return Obx(
-      () => Scaffold(
+    return Obx(() {
+      AppLogger.d("Current Index: ${controller.userRoleType.value}");
+      // Determine if user is a normal user
+      final isNormalUser = controller.userRoleType.value.toLowerCase().contains(
+        "user",
+      );
+
+      // Build BottomNavigationBar items conditionally
+      final bottomNavItems = isNormalUser
+          ? [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.calendar_today),
+                label: "My Attendance",
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: "Profile",
+              ),
+            ]
+          : [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: "Home",
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.calendar_today),
+                label: "My Attendance",
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: "Profile",
+              ),
+            ];
+
+      return Scaffold(
         body: Column(
           children: [
-            // Sticky Top Section
-            _buildTopSection(size),
-
+            _buildTopSection(size, isNormalUser),
             SizedBox(height: 30),
-
-            // Scrollable page content
-            Expanded(child: _getPage()),
+            Expanded(child: _getPage(isNormalUser)),
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: controller.currentIndex.value,
-          onTap: controller.changeTab,
+          onTap: (index) {
+            // Adjust index if normal user (shifted because home tab removed)
+            if (isNormalUser) {
+              controller.changeTab(
+                index + 1,
+              ); // My Attendance is index 1, Profile 2
+            } else {
+              controller.changeTab(index);
+            }
+          },
           selectedItemColor: Colors.teal,
           unselectedItemColor: Colors.grey,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today),
-              label: "My Attendance",
-            ),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-          ],
+          items: bottomNavItems,
         ),
-      ),
-    );
+      );
+    });
   }
 
-  // Returns the currently selected page
-  Widget _getPage() {
-    switch (controller.currentIndex.value) {
-      case 0:
-        return DashboardScreen();
-      case 1:
-        return AttendanceHistoryScreen();
-      case 2:
-        return const ProfileContent();
-      default:
-        return DashboardScreen();
+  Widget _getPage(bool isNormalUser) {
+    if (isNormalUser) {
+      switch (controller.currentIndex.value) {
+        case 1:
+          return MyAttendanceScreen();
+        case 2:
+          return const ProfileContent();
+        default:
+          return MyAttendanceScreen();
+      }
+    } else {
+      switch (controller.currentIndex.value) {
+        case 0:
+          return DashboardScreen();
+        case 1:
+          return MyAttendanceScreen();
+        case 2:
+          return const ProfileContent();
+        default:
+          return DashboardScreen();
+      }
     }
   }
 
-  // Sticky header with floating Mark Attendance button
-  Widget _buildTopSection(Size size) {
+  Widget _buildTopSection(Size size, bool isNormalUser) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -97,11 +137,9 @@ class HomeView extends StatelessWidget {
                   ),
                   InkWell(
                     onTap: () {
-                      // Open popup menu
                       Get.dialog(
                         Stack(
                           children: [
-                            // Dismiss when tapping outside
                             GestureDetector(
                               onTap: () => Get.back(),
                               child: Container(color: Colors.transparent),
@@ -118,32 +156,32 @@ class HomeView extends StatelessWidget {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      InkWell(
-                                        onTap: () {
-                                          Get.toNamed("/add-employee");
-                                        },
-                                        child: Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 12,
-                                          ),
-                                          child: Row(
-                                            children: const [
-                                              SizedBox(
-                                                width: 24,
-                                                child: Icon(
-                                                  Icons.person_add,
-                                                  color: Colors.black,
+                                      if (!isNormalUser)
+                                        InkWell(
+                                          onTap: () {
+                                            Get.toNamed("/add-employee");
+                                          },
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 12,
+                                            ),
+                                            child: Row(
+                                              children: const [
+                                                SizedBox(
+                                                  width: 24,
+                                                  child: Icon(
+                                                    Icons.person_add,
+                                                    color: Colors.black,
+                                                  ),
                                                 ),
-                                              ),
-                                              SizedBox(width: 12),
-                                              Text("Add Employee"),
-                                            ],
+                                                SizedBox(width: 12),
+                                                Text("Add Employee"),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-
                                       InkWell(
                                         onTap: () {
                                           Get.back();
@@ -213,8 +251,6 @@ class HomeView extends StatelessWidget {
             ],
           ),
         ),
-
-        // Floating Mark Attendance Button
         Positioned(
           bottom: -size.height * 0.03,
           left: size.width * 0.2,
@@ -222,7 +258,7 @@ class HomeView extends StatelessWidget {
           child: Obx(
             () => ElevatedButton(
               onPressed: controller.isAttendanceMarked.value
-                  ? null // disabled if already marked
+                  ? null
                   : () {
                       Get.bottomSheet(
                         const AttendanceViewBottomSheet(),
@@ -238,7 +274,6 @@ class HomeView extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 side: const BorderSide(color: Color(0xFF1B5E20), width: 1),
-
                 foregroundColor: const Color(0xFF1B5E20),
                 disabledBackgroundColor: Colors.grey.shade300,
                 disabledForegroundColor: Colors.grey.shade600,

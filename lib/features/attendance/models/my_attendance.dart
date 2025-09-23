@@ -16,4 +16,10 @@ class Attendance {
       officeName: json['officeName'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'captureDate': captureDate,
+    'userId': userId,
+    'officeName': officeName,
+  };
 }

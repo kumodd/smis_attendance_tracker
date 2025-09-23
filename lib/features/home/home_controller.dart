@@ -2,14 +2,17 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:smis_attendance_tracker/features/home/model/user_model.dart';
 import 'package:smis_attendance_tracker/services/attendance_service.dart';
+import 'package:smis_attendance_tracker/utils/logger.dart';
 
 import '../attendance/controllers/attendance_controller.dart';
- // model for user
+// model for user
 
 class HomeController extends GetxController {
   final storage = GetStorage();
   final AttendanceService _attendanceService = AttendanceService();
-  final AttendanceController _attendanceController = Get.put(AttendanceController());
+  final AttendanceController _attendanceController = Get.put(
+    AttendanceController(),
+  );
 
   // Bottom navigation
   var currentIndex = 0.obs;
@@ -17,6 +20,7 @@ class HomeController extends GetxController {
   // Sticky header user info
   var userName = ''.obs;
   var userRole = ''.obs;
+  var userRoleType = ''.obs;
   var userDesignation = ''.obs;
   var userLocation = ''.obs;
 
@@ -27,33 +31,43 @@ class HomeController extends GetxController {
   var directReports = <UserModel>[].obs;
   var isLoadingReports = false.obs;
 
-
-   // Status counts
+  // Status counts
   var greenCenterCount = 0.obs;
   var kanakTowerCount = 0.obs;
   var wfhCount = 0.obs;
   var leaveCount = 0.obs;
+
   /// Update counts dynamically based on `todayOffice`
   void calculateCounts() {
-    greenCenterCount.value =
-        directReports.where((u) => u.todayOffice == "Green Center").length;
+    String norm(String? v) => (v ?? '').toLowerCase().trim();
+    AppLogger.d("Calculating counts from ${directReports} direct reports");
 
-    kanakTowerCount.value =
-        directReports.where((u) => u.todayOffice == "Kanak Tower").length;
+    greenCenterCount.value = directReports
+        .where((u) => norm(u.todayOffice).contains('green center'))
+        .length;
 
-    wfhCount.value =
-        directReports.where((u) => u.todayOffice == "Work From Home").length;
+    kanakTowerCount.value = directReports
+        .where((u) => norm(u.todayOffice).contains('kanak tower'))
+        .length;
 
-    leaveCount.value =
-        directReports.where((u) => u.todayOffice == "On Leave").length;
+    wfhCount.value = directReports.where((u) {
+      final t = norm(u.todayOffice);
+      return t.contains('work from home') || t.contains('wfh');
+    }).length;
+
+    leaveCount.value = directReports
+        .where(
+          (u) =>
+              norm(u.todayOffice).contains('on leave') ||
+              norm(u.todayOffice).contains('leave'),
+        )
+        .length;
   }
 
   /// Update direct reports from API response
   void setDirectReports(List<UserModel> users) {
-    
-    
     directReports.assignAll(users);
-    calculateCounts();
+    //calculateCounts();
   }
 
   @override
@@ -68,6 +82,7 @@ class HomeController extends GetxController {
   void _loadUserData() {
     final user = storage.read("user") ?? {};
     userName.value = user["name"] ?? "User Name";
+    userRoleType.value = user["role"] ?? "Role";
     userRole.value =
         "${user["role"] ?? "Role"} • ${user["designation"] ?? "Designation"}";
     userDesignation.value = user["designation"] ?? "Designation";
@@ -101,7 +116,7 @@ class HomeController extends GetxController {
       final response = await _attendanceService.getUserList();
 
       if (response.statusCode == 200) {
-        _checkMyAttendance();
+        checkMyAttendance();
         final usersJson = response.data["data"]["users"] as List;
         final users = usersJson.map((u) => UserModel.fromJson(u)).toList();
 
@@ -118,13 +133,17 @@ class HomeController extends GetxController {
         for (var user in users) {
           final office = (user.todayOffice ?? "").trim().toLowerCase();
 
-          if (office == "green center") {
+          final t = (office ?? '').toLowerCase().trim();
+
+          if (t.contains('green') && t.contains('center')) {
             greenCenterCount.value++;
-          } else if (office == "kanak tower") {
+          } else if (t.contains('kanak') && t.contains('tower')) {
             kanakTowerCount.value++;
-          } else if (office == "wfh" || office == "work from home") {
+          } else if (t.contains('wfh') ||
+              t.contains('work') && t.contains('home')) {
             wfhCount.value++;
-          } else if (office == "leave" || office == "on leave") {
+          } else if (t.contains('leave') ||
+              (t.contains('on') && t.contains('leave'))) {
             leaveCount.value++;
           }
         }
@@ -139,9 +158,10 @@ class HomeController extends GetxController {
       isLoadingReports.value = false;
     }
   }
+
   var isAttendanceMarked = false.obs;
 
-  Future<void> _checkMyAttendance() async {
+  Future<void> checkMyAttendance() async {
     try {
       // call fetchAttendance (no return value, just updates attendanceList)
       await _attendanceController.fetchAttendance();
@@ -171,14 +191,11 @@ class HomeController extends GetxController {
     leaveCount.value = 0;
   }
 
-
   /// Refresh user data dynamically
   void refreshUserData() {
     _loadUserData();
     fetchDirectReports();
   }
-
-
 
   /// Change bottom navigation tab
   void changeTab(int index) {
@@ -190,9 +207,4 @@ class HomeController extends GetxController {
     storage.erase();
     Get.offAllNamed("/login"); // or AppRoutes.login
   }
-
-
-
-
-
 }
