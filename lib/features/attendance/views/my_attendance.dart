@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../controllers/attendance_controller.dart';
@@ -72,7 +73,7 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
           if (attendanceController.errorMessage.isNotEmpty) {
             return Center(
               child: Text(
-                attendanceController.errorMessage.value,
+                "No Data Available",
                 style: const TextStyle(color: Colors.red),
               ),
             );
@@ -300,6 +301,7 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
             'date': captureDateStr ?? '',
             'office': officeName ?? 'Unknown',
             'userId': userId ?? '',
+            'time': DateFormat.Hm().format(parsed),
           });
         }
       }
@@ -307,7 +309,13 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
 
     showModalBottomSheet(
       context: context,
-      builder: (_) {
+      backgroundColor: Colors.white,
+      isScrollControlled: false,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
         if (matches.isEmpty) {
           return Container(
             padding: const EdgeInsets.all(16),
@@ -316,24 +324,116 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
           );
         }
 
-        return Container(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: matches.map((m) {
-              return ListTile(
-                leading: const Icon(Icons.event_note),
-                title: Text(m['office'] ?? ''),
-                subtitle: Text(m['date'] ?? ''),
-                trailing: m['userId'] != null && m['userId']!.isNotEmpty
-                    ? Text(m['userId']!)
-                    : null,
-              );
-            }).toList(),
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header with color dot, office name, and close icon
+                Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(matches[0]['office'] ?? ''),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        matches[0]['office'] ?? 'Unknown Office',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+
+                // Date row
+                Row(
+                  children: [
+                    const Icon(Icons.event, size: 18, color: Colors.black54),
+                    const SizedBox(width: 8),
+                    Text(
+                      "${_formatDate(day)}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+
+                // Time row
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.access_time,
+                      size: 18,
+                      color: Colors.black54,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Time: ${matches[0]['time'] ?? '—'}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                if (matches.length > 1)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Other records:",
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      ...matches.skip(1).map((m) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            "${m['office'] ?? 'Unknown'} at ${m['time'] ?? '—'}",
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+              ],
+            ),
           ),
         );
       },
     );
+  }
+
+  String _formatDate(DateTime date) {
+    // Format date as: 23 September 2025, Tuesday
+    final day = date.day.toString().padLeft(2, '0');
+    final month = _monthName(date.month);
+    final year = date.year;
+    final weekday = _weekdayName(date.weekday);
+    return "$day $month $year, $weekday";
   }
 
   String _monthName(int month) {
@@ -352,6 +452,20 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
       "November",
       "December",
     ];
-    return months[month];
+    return (month >= 1 && month <= 12) ? months[month] : "";
+  }
+
+  String _weekdayName(int weekday) {
+    const names = [
+      "",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+    return (weekday >= 1 && weekday <= 7) ? names[weekday] : "";
   }
 }
