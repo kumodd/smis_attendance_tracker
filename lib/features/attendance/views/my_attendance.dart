@@ -23,6 +23,7 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
   @override
   void initState() {
     super.initState();
+    attendanceController.fetchAttendance();
 
     // Safe read of Get.arguments
     final args = Get.arguments;

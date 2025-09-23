@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:smis_attendance_tracker/utils/logger.dart';
 import 'package:table_calendar/table_calendar.dart';
+
 import '../controllers/attendance_controller.dart';
 
 // Model representing attendance detail for date
@@ -34,17 +36,16 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
   @override
   void initState() {
     super.initState();
-
     final args = (Get.arguments is Map)
         ? Get.arguments as Map
         : <String, dynamic>{};
     final userId = args["userId"];
-    if (userId != null) {
+    if (userId != null && userId.isNotEmpty) {
+      attendanceController.attendanceList.clear(); // Clear stale data
       attendanceController.fetchUserAttendance(userId).then((_) {
         _buildAttendanceDetailsMap();
       });
     }
-
     _focusedDay = DateTime.now();
     _selectedDay = DateTime.now();
   }
@@ -57,14 +58,18 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
       final officeName = (item["officeName"] ?? "").toString();
 
       try {
-        final dateTime = DateFormat("yyyy-MM-dd HH:mm:ss.S").parse(rawDate);
+        // Use DateTime.parse that reliably handles fractional seconds like .0
+        final dateTime = DateTime.parse(rawDate);
         final key = DateTime(dateTime.year, dateTime.month, dateTime.day);
         details[key] = AttendanceRecord(
           captureDate: dateTime,
           officeName: officeName,
         );
+        print(
+          "Parsed attendance record for $key at ${dateTime.toIso8601String()}",
+        );
       } catch (e) {
-        // Parsing error - ignore or handle as needed
+        print("Error parsing captureDate '$rawDate': $e");
       }
     }
 
@@ -260,19 +265,61 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
   }
 
   Future<void> _openAttendanceModal(BuildContext context, DateTime day) async {
-    final key = DateTime(day.year, day.month, day.day);
-    final AttendanceType? type = attendanceController.attendanceMap[key];
+    final selectedDayOnly = DateTime(day.year, day.month, day.day);
+    final AttendanceType? type =
+        attendanceController.attendanceMap[selectedDayOnly];
 
-    final AttendanceRecord? record = attendanceDetailsMap[key];
+    // Find all attendance records from the list matching the selected day
+    final matchedRecords = <Map<String, String>>[];
 
-    final String officeLabel = record?.officeName ?? _attendanceLabel(type);
-    final Color color = _attendanceColor(type);
+    for (var item in attendanceController.attendanceList) {
+      String? captureDateStr;
+      String? officeName;
+      try {
+        captureDateStr = (item is Map)
+            ? item['captureDate']?.toString()
+            : (item as dynamic).captureDate?.toString();
+        officeName = (item is Map)
+            ? item['officeName']?.toString()
+            : (item as dynamic).officeName?.toString();
+      } catch (e) {
+        // ignore parsing errors here
+      }
+      AppLogger.i("Parsing captureDate: $captureDateStr");
 
-    final String dateStr =
+      if (captureDateStr != null) {
+        DateTime? parsed;
+        try {
+          parsed = DateTime.parse(captureDateStr);
+        } catch (e) {
+          parsed = null;
+        }
+        if (parsed != null) {
+          final key = DateTime(parsed.year, parsed.month, parsed.day);
+          if (key == selectedDayOnly) {
+            matchedRecords.add({
+              'time': DateFormat.Hm().format(parsed),
+              'office': officeName ?? _attendanceLabel(type),
+            });
+          }
+        }
+      }
+    }
+
+    // Fallback to attendanceDetailsMap for officeName if no matches found
+    final AttendanceRecord? singleRecord =
+        attendanceDetailsMap[selectedDayOnly];
+    final officeLabel = matchedRecords.isNotEmpty
+        ? matchedRecords[0]['office']!
+        : (singleRecord?.officeName ?? _attendanceLabel(type));
+
+    final color = _attendanceColor(type);
+
+    final dateStr =
         "${_pad(day.day)} ${_monthName(day.month)} ${day.year}, ${_weekdayName(day.weekday)}";
 
-    final String timeStr = record != null
-        ? _formatTime(record.captureDate)
+    final timeStr = matchedRecords.isNotEmpty
+        ? matchedRecords[0]['time']!
         : "—";
 
     await showModalBottomSheet<void>(
@@ -340,7 +387,10 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      "Time: $timeStr",
+                      matchedRecords.isNotEmpty &&
+                              matchedRecords[0]['time'] != null
+                          ? "Time: ${matchedRecords[0]['time']}"
+                          : (type == null ? "No attendance time" : "Time: —"),
                       style: const TextStyle(
                         fontSize: 14,
                         color: Colors.black87,
