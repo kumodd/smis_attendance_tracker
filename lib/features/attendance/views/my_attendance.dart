@@ -20,9 +20,12 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
   late DateTime _focusedDay;
   DateTime? _selectedDay;
 
+
+
   @override
   void initState() {
     super.initState();
+    
     attendanceController.fetchAttendance();
 
     // Safe read of Get.arguments
@@ -310,6 +313,7 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
 
     showModalBottomSheet(
       context: context,
+
       backgroundColor: Colors.white,
       isScrollControlled: false,
       showDragHandle: true,

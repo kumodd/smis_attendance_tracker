@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'core/bindings/initial_binding.dart';
@@ -29,11 +30,16 @@ class AttendanceApp extends StatelessWidget {
       title: "Attendance SMIS",
       theme: AppTheme.lightTheme,
       initialBinding: InitialBinding(),
+      builder: EasyLoading.init(),
+      
 
       // ✅ Decides where to start
       initialRoute: isLoggedIn ? AppRoutes.home : AppRoutes.login,
 
       getPages: AppRoutes.pages,
     );
+    
   }
+
+  
 }

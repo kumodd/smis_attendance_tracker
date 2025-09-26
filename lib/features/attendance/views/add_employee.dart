@@ -51,6 +51,7 @@ class AddEmployeeScreen extends StatelessWidget {
                     _buildInputField(
                         'Employee Name', controller.employeeNameController),
                     _buildInputField('Phone Number', controller.phoneController,
+                    
                         keyboardType: TextInputType.phone),
                     _buildInputField('PSID', controller.psidController,
                         suffixIcon: Icons.unfold_more),

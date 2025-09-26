@@ -3,9 +3,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:smis_attendance_tracker/features/home/model/user_model.dart';
 import 'package:smis_attendance_tracker/services/attendance_service.dart';
 import 'package:smis_attendance_tracker/utils/logger.dart';
-
 import '../attendance/controllers/attendance_controller.dart';
-// model for user
 
 class HomeController extends GetxController {
   final storage = GetStorage();
@@ -37,10 +35,81 @@ class HomeController extends GetxController {
   var wfhCount = 0.obs;
   var leaveCount = 0.obs;
 
+  // 🔹 Search & Role filtering
+  var searchText = ''.obs;
+
+  // 🔹 Static roles
+  var roles = ["All", "Tower Admin", "Reporting Manager", "User"].obs;
+
+  // Multi-selection roles
+  var selectedRoles = <String>[].obs;
+
+  // Attendance
+  var isAttendanceMarked = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadUserData();
+    _updateGreeting();
+    fetchDirectReports();
+  }
+
+  /// Load user info from storage
+  void _loadUserData() {
+    final user = storage.read("user") ?? {};
+    userName.value = user["name"] ?? "User Name";
+    userRoleType.value = user["role"] ?? "Role";
+    userRole.value =
+        "${user["role"] ?? "Role"} • ${user["designation"] ?? "Designation"}";
+    userDesignation.value = user["designation"] ?? "Designation";
+    userLocation.value = user["location"] ?? "-- --";
+  }
+
+  /// 🔹 Combined Filtered reports
+  List<UserModel> get filteredReports {
+    Iterable<UserModel> list = directReports;
+
+    // Apply search filter
+    if (searchText.isNotEmpty) {
+      final query = searchText.value.toLowerCase();
+      list = list.where(
+        (u) =>
+            u.userName.toLowerCase().contains(query) ||
+            u.role.toLowerCase().contains(query) ||
+            u.designation.toLowerCase().contains(query),
+      );
+    }
+
+    // Apply multi-role filter
+    if (selectedRoles.isNotEmpty && !selectedRoles.contains("All")) {
+      list = list.where((u) => selectedRoles.contains(u.role));
+    }
+
+    return list.toList();
+  }
+
+  /// Toggle role selection
+  void toggleRoleSelection(String role) {
+    if (role == "All") {
+      selectedRoles.clear();
+      selectedRoles.add("All");
+    } else {
+      selectedRoles.remove("All");
+      if (selectedRoles.contains(role)) {
+        selectedRoles.remove(role);
+      } else {
+        selectedRoles.add(role);
+      }
+    }
+  }
+
   /// Update counts dynamically based on `todayOffice`
   void calculateCounts() {
     String norm(String? v) => (v ?? '').toLowerCase().trim();
-    AppLogger.d("Calculating counts from ${directReports} direct reports");
+    AppLogger.d(
+      "Calculating counts from ${directReports.length} direct reports",
+    );
 
     greenCenterCount.value = directReports
         .where((u) => norm(u.todayOffice).contains('green center'))
@@ -67,26 +136,6 @@ class HomeController extends GetxController {
   /// Update direct reports from API response
   void setDirectReports(List<UserModel> users) {
     directReports.assignAll(users);
-    //calculateCounts();
-  }
-
-  @override
-  void onInit() {
-    super.onInit();
-    _loadUserData();
-    _updateGreeting();
-    fetchDirectReports();
-  }
-
-  /// Load user info from storage
-  void _loadUserData() {
-    final user = storage.read("user") ?? {};
-    userName.value = user["name"] ?? "User Name";
-    userRoleType.value = user["role"] ?? "Role";
-    userRole.value =
-        "${user["role"] ?? "Role"} • ${user["designation"] ?? "Designation"}";
-    userDesignation.value = user["designation"] ?? "Designation";
-    userLocation.value = user["location"] ?? "-- --";
   }
 
   /// Update greeting based on IST time
@@ -109,7 +158,6 @@ class HomeController extends GetxController {
   }
 
   /// Fetch direct reports from API
-  /// Fetch direct reports from API
   Future<void> fetchDirectReports() async {
     try {
       isLoadingReports.value = true;
@@ -120,27 +168,17 @@ class HomeController extends GetxController {
         final usersJson = response.data["data"]["users"] as List;
         final users = usersJson.map((u) => UserModel.fromJson(u)).toList();
 
-        // Update the direct reports list
         directReports.assignAll(users);
 
-        // Reset counts
-        greenCenterCount.value = 0;
-        kanakTowerCount.value = 0;
-        wfhCount.value = 0;
-        leaveCount.value = 0;
-
-        // Count by todayOffice field
+        _resetCounts();
         for (var user in users) {
-          final office = (user.todayOffice ?? "").trim().toLowerCase();
-
-          final t = (office ?? '').toLowerCase().trim();
-
+          final t = (user.todayOffice ?? '').toLowerCase().trim();
           if (t.contains('green') && t.contains('center')) {
             greenCenterCount.value++;
           } else if (t.contains('kanak') && t.contains('tower')) {
             kanakTowerCount.value++;
           } else if (t.contains('wfh') ||
-              t.contains('work') && t.contains('home')) {
+              (t.contains('work') && t.contains('home'))) {
             wfhCount.value++;
           } else if (t.contains('leave') ||
               (t.contains('on') && t.contains('leave'))) {
@@ -159,13 +197,10 @@ class HomeController extends GetxController {
     }
   }
 
-  var isAttendanceMarked = false.obs;
-
+  /// Check if user has marked attendance today
   Future<void> checkMyAttendance() async {
     try {
-      // call fetchAttendance (no return value, just updates attendanceList)
       await _attendanceController.fetchAttendance();
-
       final records = _attendanceController.attendanceList;
 
       final today = DateTime.now().toLocal();
@@ -202,9 +237,12 @@ class HomeController extends GetxController {
     currentIndex.value = index;
   }
 
+  /// Trigger refresh after role filter
+  void filterReportsByRole() => directReports.refresh();
+
   /// Logout
   void logout() {
     storage.erase();
-    Get.offAllNamed("/login"); // or AppRoutes.login
+    Get.offAllNamed("/login");
   }
 }

@@ -271,6 +271,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
 
     // Find all attendance records from the list matching the selected day
     final matchedRecords = <Map<String, String>>[];
+    AppLogger.d("Capture date $matchedRecords");
 
     for (var item in attendanceController.attendanceList) {
       String? captureDateStr;

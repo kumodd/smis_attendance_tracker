@@ -60,7 +60,13 @@ class HomeView extends StatelessWidget {
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
-          currentIndex: controller.currentIndex.value,
+          currentIndex: (() {
+            final maxIndex = bottomNavItems.length - 1;
+            final idx = isNormalUser
+                ? controller.currentIndex.value - 1
+                : controller.currentIndex.value;
+            return idx.clamp(0, maxIndex);
+          })(),
           onTap: (index) {
             // Adjust index if normal user (shifted because home tab removed)
             if (isNormalUser) {
