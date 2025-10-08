@@ -66,6 +66,7 @@ class OtpView extends StatelessWidget {
                 TextFormField(
                   controller: controller.otpController,
                   keyboardType: TextInputType.number,
+                  maxLength: 6,
                   decoration: const InputDecoration(
                     labelText: "Enter OTP",
                     border: OutlineInputBorder(),

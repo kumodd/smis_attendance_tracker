@@ -164,6 +164,9 @@ class DashboardScreen extends StatelessWidget {
               () => TextField(
                 onChanged: (value) => controller.searchText.value = value,
                 decoration: InputDecoration(
+                  border: InputBorder.none,
+  enabledBorder: InputBorder.none,  
+  focusedBorder: InputBorder.none,  
                   prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
                   suffixIcon: controller.searchText.isNotEmpty
                       ? IconButton(
@@ -173,7 +176,6 @@ class DashboardScreen extends StatelessWidget {
                       : null,
                   hintText: 'Search employee',
                   hintStyle: TextStyle(color: Colors.grey[500]),
-                  border: InputBorder.none,
                   contentPadding: EdgeInsets.only(top: 14),
                 ),
               ),
@@ -339,7 +341,7 @@ class DashboardScreen extends StatelessWidget {
                   onPressed: () {
                     Get.toNamed(
                       AppRoutes.userAttendance,
-                      arguments: {"userId": report.userId},
+                      arguments: {"userId": report.userId,"designationText": '${report.role} • ${report.designation}'},
                     );
                   },
                 ),
@@ -417,7 +419,7 @@ class DashboardScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.grey[500]),
+          //  Icon(Icons.chevron_right, color: Colors.grey[500]),
           ],
         ),
       ),

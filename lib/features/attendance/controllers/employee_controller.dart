@@ -8,7 +8,7 @@ class AddEmployeeController extends GetxController {
   final employeeNameController = TextEditingController();
   final phoneController = TextEditingController();
   final psidController = TextEditingController();
-  final selectedDesignation = 'IT executive'.obs;
+  final selectedDesignation = TextEditingController();
 
   final UserService _userService = UserService();
 
@@ -36,7 +36,11 @@ class AddEmployeeController extends GetxController {
   Future<void> addEmployee() async {
     if (employeeNameController.text.trim().isEmpty ||
         phoneController.text.trim().isEmpty) {
-      _showSnackbar('Error', 'Please fill in all required fields.', isError: true);
+      _showSnackbar(
+        'Error',
+        'Please fill in all required fields.',
+        isError: true,
+      );
       return;
     }
 
@@ -52,8 +56,10 @@ class AddEmployeeController extends GetxController {
       final res = await _userService.addUser(
         name: employeeNameController.text.trim(),
         phone: phoneController.text.trim(),
-        psid: psidController.text.trim().isEmpty ? null : psidController.text.trim(),
-        designation: selectedDesignation.value,
+        psid: psidController.text.trim().isEmpty
+            ? null
+            : psidController.text.trim(),
+        designation: selectedDesignation.text.trim(),
       );
 
       AppLogger.i("Add employee response: ${res.data}");
@@ -65,7 +71,7 @@ class AddEmployeeController extends GetxController {
         employeeNameController.clear();
         phoneController.clear();
         psidController.clear();
-        selectedDesignation.value = designations.first;
+        selectedDesignation.clear();
 
         // Navigate after short delay (so user sees snackbar)
         await Future.delayed(const Duration(milliseconds: 600));

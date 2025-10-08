@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LengthLimitingTextInputFormatter;
 import 'package:get/get.dart';
 import 'package:smis_attendance_tracker/features/attendance/controllers/employee_controller.dart';
-
 
 class AddEmployeeScreen extends StatelessWidget {
   AddEmployeeScreen({Key? key}) : super(key: key);
@@ -49,14 +49,20 @@ class AddEmployeeScreen extends StatelessWidget {
                   children: [
                     SizedBox(height: screenHeight * 0.03),
                     _buildInputField(
-                        'Employee Name', controller.employeeNameController),
-                    _buildInputField('Phone Number', controller.phoneController,
-                    
-                        keyboardType: TextInputType.phone),
-                    _buildInputField('PSID', controller.psidController,
-                        suffixIcon: Icons.unfold_more),
-                    _buildDropdownField('Designation', controller.selectedDesignation,
-                        controller.designations),
+                      'Employee Name',
+                      controller.employeeNameController,
+                    ),
+                    _buildInputField(
+                      'Phone Number',
+                      controller.phoneController,
+
+                      keyboardType: TextInputType.phone,
+                    ),
+                    _buildInputField('PSID', controller.psidController),
+                    _buildInputField(
+                      'Designation',
+                      controller.selectedDesignation,
+                    ),
                     SizedBox(height: screenHeight * 0.1),
                   ],
                 ),
@@ -67,7 +73,9 @@ class AddEmployeeScreen extends StatelessWidget {
       ),
       bottomNavigationBar: Padding(
         padding: EdgeInsets.symmetric(
-            horizontal: screenWidth * 0.05, vertical: screenHeight * 0.02),
+          horizontal: screenWidth * 0.05,
+          vertical: screenHeight * 0.02,
+        ),
         child: ElevatedButton.icon(
           onPressed: controller.addEmployee,
           icon: const Icon(Icons.add),
@@ -90,25 +98,38 @@ class AddEmployeeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller,
-      {TextInputType keyboardType = TextInputType.text, IconData? suffixIcon}) {
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller, {
+    TextInputType keyboardType = TextInputType.text,
+    IconData? suffixIcon,
+  }) {
     final screenWidth = Get.width;
     final screenHeight = Get.height;
+
+    // Check if label contains 'phone' (case-insensitive)
+    final isPhoneField = label.toLowerCase().contains("phone");
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: screenHeight * 0.015),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: screenWidth * 0.04,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: screenWidth * 0.04,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           SizedBox(height: screenHeight * 0.01),
           TextField(
             controller: controller,
             keyboardType: keyboardType,
+            inputFormatters: isPhoneField
+                ? [LengthLimitingTextInputFormatter(10)]
+                : [],
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.grey[200],
@@ -119,9 +140,12 @@ class AddEmployeeScreen extends StatelessWidget {
                 borderSide: BorderSide.none,
               ),
               contentPadding: EdgeInsets.symmetric(
-                  horizontal: screenWidth * 0.04, vertical: screenHeight * 0.02),
-              suffixIcon:
-                  suffixIcon != null ? Icon(suffixIcon, color: Colors.grey[600]) : null,
+                horizontal: screenWidth * 0.04,
+                vertical: screenHeight * 0.02,
+              ),
+              suffixIcon: suffixIcon != null
+                  ? Icon(suffixIcon, color: Colors.grey[600])
+                  : null,
             ),
           ),
         ],
@@ -129,7 +153,11 @@ class AddEmployeeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdownField(String label, RxString rxValue, List<String> items) {
+  Widget _buildDropdownField(
+    String label,
+    RxString rxValue,
+    List<String> items,
+  ) {
     final screenWidth = Get.width;
     final screenHeight = Get.height;
 
@@ -138,11 +166,14 @@ class AddEmployeeScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: screenWidth * 0.04,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: screenWidth * 0.04,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           SizedBox(height: screenHeight * 0.01),
           Container(
             padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
@@ -155,12 +186,18 @@ class AddEmployeeScreen extends StatelessWidget {
                 child: DropdownButton<String>(
                   isExpanded: true,
                   value: rxValue.value,
-                  icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.grey,
+                  ),
                   onChanged: (val) {
                     if (val != null) rxValue.value = val;
                   },
                   items: items
-                      .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
+                      .map(
+                        (e) =>
+                            DropdownMenuItem<String>(value: e, child: Text(e)),
+                      )
                       .toList(),
                 ),
               ),

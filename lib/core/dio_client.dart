@@ -22,8 +22,8 @@ class ApiClient {
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 15),
       validateStatus: (status) {
-        // ✅ Allow 200-499 into onResponse (so 401 handled here, not as exception)
-        return status != null && status < 300;
+        // ✅ Only allow 2xx into onResponse
+        return status != null && status >= 200 && status < 300;
       },
     );
 
@@ -52,19 +52,20 @@ class ApiClient {
         onError: (DioError error, handler) async {
           final status = error.response?.statusCode;
           AppLogger.e("❌ [ERROR] $status ${error.message}");
+
           if (error.response != null) {
             AppLogger.e("Error Data: ${error.response?.data}");
           }
 
-          // 🚨 Skip refresh if this is the refresh request itself
+          // ⛔ Skip if this is the refresh request
           if (error.requestOptions.path.contains("/auth/refresh-token")) {
             AppLogger.e("⚠️ Refresh token request failed. Logging out...");
             _logoutUser();
-            return handler.next(error);
+            return handler.reject(error);
           }
 
-          // 🚨 Handle expired token
-          if (status == 401 || status == 403) {
+          // 🔐 Handle token expiration (401)
+          if (status == 401) {
             if (!_isRefreshing) {
               _isRefreshing = true;
               _refreshCompleter = Completer();
@@ -85,9 +86,9 @@ class ApiClient {
               } else {
                 AppLogger.e("🚪 Refresh failed. Logging out...");
                 _logoutUser();
+                return handler.reject(error); // ❗ Ensure no further processing
               }
             } else {
-              // If refresh already happening → wait
               AppLogger.d("⏳ Waiting for ongoing refresh...");
               await _refreshCompleter?.future;
 
@@ -97,9 +98,28 @@ class ApiClient {
               final cloneReq = await _dio.fetch(error.requestOptions);
               return handler.resolve(cloneReq);
             }
-          }
+          } else {
+            // 📛 Other errors (403, 422, etc.) — extract error message
+            final errorData = error.response?.data;
+            String message = "Something went wrong";
 
-          return handler.next(error);
+            if (errorData != null &&
+                errorData is Map<String, dynamic> &&
+                errorData.containsKey("error")) {
+              message = errorData["error"];
+            }
+
+            AppLogger.e("📣 API Error Message: $message");
+
+            return handler.reject(
+              DioError(
+                requestOptions: error.requestOptions,
+                response: error.response,
+                error: message,
+                type: DioErrorType.badResponse,
+              ),
+            );
+          }
         },
       ),
     );
