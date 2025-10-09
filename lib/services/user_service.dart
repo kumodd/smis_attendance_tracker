@@ -26,4 +26,24 @@ class UserService {
       rethrow;
     }
   }
+
+    Future<Response> updateUser({
+    required String name,
+    required String phone,
+    required String designation,
+    required String psid,
+  }) async {
+    try {
+      return await api.post(
+        "/user/update-user/$psid",
+        data: {
+          "name": name,
+          "mobile": phone,
+          "designation": designation,
+        },
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

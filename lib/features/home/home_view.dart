@@ -258,42 +258,48 @@ class HomeView extends StatelessWidget {
           ),
         ),
         Positioned(
-          bottom: -size.height * 0.03,
+          bottom: -size.height * 0.03, // overlap slightly outside Stack
           left: size.width * 0.2,
           right: size.width * 0.2,
           child: Obx(
-            () => ElevatedButton(
-              onPressed: controller.isAttendanceMarked.value
-                  ? null
-                  : () {
-                      Get.bottomSheet(
-                        const AttendanceViewBottomSheet(),
-                        isScrollControlled: true,
-                        backgroundColor: Colors.white,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(30),
+            () => SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: controller.isAttendanceMarked.value
+                    ? null
+                    : () {
+                        Get.bottomSheet(
+                          const AttendanceViewBottomSheet(),
+                          isScrollControlled: true,
+                          backgroundColor: Colors.white,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(30),
+                            ),
                           ),
-                        ),
-                      );
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                side: const BorderSide(color: Color(0xFF1B5E20), width: 1),
-                foregroundColor: const Color(0xFF1B5E20),
-                disabledBackgroundColor: Colors.grey.shade300,
-                disabledForegroundColor: Colors.grey.shade600,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                        );
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF1B5E20),
+                  disabledBackgroundColor: Colors.grey.shade300,
+                  disabledForegroundColor: Colors.grey.shade600,
+                  side: const BorderSide(color: Color(0xFF1B5E20), width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: size.height * 0.02),
+                  elevation: 0,
                 ),
-                padding: EdgeInsets.symmetric(vertical: size.height * 0.02),
-                elevation: 0,
-              ),
-              child: Text(
-                'Mark Attendance',
-                style: TextStyle(
-                  fontSize: size.width * 0.045,
-                  fontWeight: FontWeight.bold,
+                child: Text(
+                  'Mark Attendance',
+                  style: TextStyle(
+                    fontSize: size.width * 0.045,
+                    fontWeight: FontWeight.bold,
+                    color: controller.isAttendanceMarked.value
+                        ? Colors.grey.shade600
+                        : const Color(0xFF1B5E20),
+                  ),
                 ),
               ),
             ),

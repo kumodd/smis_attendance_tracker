@@ -7,6 +7,7 @@ class AddEmployeeScreen extends StatelessWidget {
   AddEmployeeScreen({Key? key}) : super(key: key);
 
   final AddEmployeeController controller = Get.put(AddEmployeeController());
+  
 
   @override
   Widget build(BuildContext context) {

@@ -10,6 +10,9 @@ class AddEmployeeController extends GetxController {
   final psidController = TextEditingController();
   final selectedDesignation = TextEditingController();
 
+  var isLoading = false.obs;
+  var isSuccessUpdateEMployee = false.obs;
+
   final UserService _userService = UserService();
 
   final List<String> designations = [
@@ -90,6 +93,49 @@ class AddEmployeeController extends GetxController {
       if (Get.isDialogOpen ?? false) {
         Get.back(); // Close loader safely
       }
+    }
+  }
+
+  Future<void> updateEmployee(
+    String psid,
+    String name,
+    String designation,
+    String phone,
+  ) async {
+    isLoading.value = true;
+    isSuccessUpdateEMployee.value = false;
+
+    try {
+      final res = await _userService.updateUser(
+        psid: psid,
+        name: name,
+        phone: phone,
+        designation: designation,
+      );
+
+      if (res.statusCode == 200) {
+        isSuccessUpdateEMployee.value = true;
+        _showSnackbar(
+          'Success',
+          "Employee updated successfully!",
+          isError: false,
+        );
+      } else {
+        isSuccessUpdateEMployee.value = false;
+
+        _showSnackbar(
+          'Error',
+          res.data?["message"] ?? "Something went wrong",
+          isError: true,
+        );
+      }
+    } catch (e, st) {
+      isSuccessUpdateEMployee.value = false;
+
+      AppLogger.e("Update employee error", e, st);
+      _showSnackbar('Error', e.toString(), isError: true);
+    } finally {
+      isLoading.value = false;
     }
   }
 

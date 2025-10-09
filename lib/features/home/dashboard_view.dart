@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
+import 'package:smis_attendance_tracker/features/attendance/controllers/employee_controller.dart';
 import 'package:smis_attendance_tracker/utils/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:smis_attendance_tracker/features/home/home_controller.dart';
@@ -9,6 +10,9 @@ import 'package:smis_attendance_tracker/routes/app_routes.dart';
 
 class DashboardScreen extends StatelessWidget {
   final HomeController controller = Get.put(HomeController());
+  final AddEmployeeController addEmployeeController = Get.put(
+    AddEmployeeController(),
+  ); // <-- instantiate here
 
   DashboardScreen({Key? key}) : super(key: key);
 
@@ -28,7 +32,7 @@ class DashboardScreen extends StatelessWidget {
               SizedBox(height: size.height * 0.025),
               _buildSearchFilter(size, context),
               SizedBox(height: size.height * 0.03),
-              _buildDirectReports(size),
+              _buildDirectReports(size, context),
             ],
           ),
         ),
@@ -165,8 +169,8 @@ class DashboardScreen extends StatelessWidget {
                 onChanged: (value) => controller.searchText.value = value,
                 decoration: InputDecoration(
                   border: InputBorder.none,
-  enabledBorder: InputBorder.none,  
-  focusedBorder: InputBorder.none,  
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                   prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
                   suffixIcon: controller.searchText.isNotEmpty
                       ? IconButton(
@@ -284,7 +288,7 @@ class DashboardScreen extends StatelessWidget {
   }
 
   /// Direct reports
-  Widget _buildDirectReports(Size size) {
+  Widget _buildDirectReports(Size size, BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -316,7 +320,7 @@ class DashboardScreen extends StatelessWidget {
             itemCount: reports.length,
             itemBuilder: (context, index) {
               final report = reports[index];
-              return _buildDirectReportCard(report, size.width);
+              return _buildDirectReportCard(report, size.width, context);
             },
           );
         }),
@@ -324,7 +328,11 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDirectReportCard(UserModel report, double width) {
+  Widget _buildDirectReportCard(
+    UserModel report,
+    double width,
+    BuildContext context,
+  ) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 1,
@@ -341,7 +349,11 @@ class DashboardScreen extends StatelessWidget {
                   onPressed: () {
                     Get.toNamed(
                       AppRoutes.userAttendance,
-                      arguments: {"userId": report.userId,"designationText": '${report.role} • ${report.designation}'},
+                      arguments: {
+                        "userId": report.userId,
+                        "designationText":
+                            '${report.role} • ${report.designation}',
+                      },
                     );
                   },
                 ),
@@ -349,24 +361,28 @@ class DashboardScreen extends StatelessWidget {
                   icon: Icon(Icons.call, color: Colors.green),
                   onPressed: () async {
                     final phone = report.mobileNo ?? "";
-                    var url = Uri.parse("tel:+91$phone");
-                    EasyLoading.show(status: 'loading...');
+                    if (phone.isEmpty) {
+                      Get.snackbar("Error", "Phone number is empty");
+                      return;
+                    }
 
+                    final Uri url = Uri(scheme: 'tel', path: '+91$phone');
+
+                    EasyLoading.show(status: 'Loading...');
                     try {
-                      await Future.delayed(const Duration(seconds: 3));
-
                       if (await canLaunchUrl(url)) {
                         await launchUrl(
                           url,
-                          mode: LaunchMode.externalApplication,
+                          mode: LaunchMode
+                              .externalApplication, // forces external dialer
                         );
                       } else {
-                        Get.snackbar("Error", "Could not launch dialer");
+                        // fallback: try generic launch
+                        await launchUrl(url);
                       }
                     } catch (e) {
-                      Get.snackbar("Error", "Something went wrong");
+                      Get.snackbar("Error", "Something went wrong: $e");
                     } finally {
-                      // Close loader
                       EasyLoading.dismiss();
                     }
                   },
@@ -419,10 +435,176 @@ class DashboardScreen extends StatelessWidget {
                 ],
               ),
             ),
-          //  Icon(Icons.chevron_right, color: Colors.grey[500]),
+            Center(
+              child: InkWell(
+                onTap: () => _showEditProfileBottomSheet(report, context),
+                child: Icon(Icons.edit_rounded, color: Colors.grey[500]),
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showEditProfileBottomSheet(UserModel report, BuildContext context) {
+    final TextEditingController nameController = TextEditingController(
+      text: report.userName,
+    );
+    final TextEditingController designationController = TextEditingController(
+      text: report.designation,
+    );
+    final TextEditingController phoneController = TextEditingController(
+      text: report.mobileNo ?? "",
+    );
+
+    final addEmployeeController = Get.find<AddEmployeeController>();
+    addEmployeeController.isSuccessUpdateEMployee.value = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Obx(() {
+          if (addEmployeeController.isSuccessUpdateEMployee.value) {
+            // Schedule for after build
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              addEmployeeController.isSuccessUpdateEMployee.value =
+                  false; // reset flag
+              controller.fetchDirectReports(); // refresh
+              if (Navigator.canPop(context))
+                Navigator.pop(context); // close modal
+            });
+          }
+          return Stack(
+            children: [
+              Padding(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 20,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              "Edit Profile",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // PSID (read-only)
+                      TextField(
+                        enabled: false,
+
+                        decoration: InputDecoration(
+                          hintText: report.userId.toString(),
+                          filled: true,
+                          fillColor: Colors.grey[200],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Name
+                      TextField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          labelText: "Name",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Designation
+                      TextField(
+                        controller: designationController,
+                        decoration: InputDecoration(
+                          labelText: "Designation",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Phone
+                      TextField(
+                        controller: phoneController,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        decoration: InputDecoration(
+                          labelText: "Phone Number",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Save Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1B5E20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () {
+                            addEmployeeController.updateEmployee(
+                              report.userId.toString(),
+                              nameController.text,
+                              designationController.text,
+                              phoneController.text,
+                            );
+                          },
+                          child: const Text("Save Changes"),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Loader overlay
+              if (addEmployeeController.isLoading.value)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black54,
+                    child: const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        });
+      },
     );
   }
 }
