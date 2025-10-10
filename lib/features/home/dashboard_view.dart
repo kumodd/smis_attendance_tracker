@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:smis_attendance_tracker/features/attendance/controllers/employee_controller.dart';
+import 'package:smis_attendance_tracker/features/home/home_view.dart';
 import 'package:smis_attendance_tracker/utils/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:smis_attendance_tracker/features/home/home_controller.dart';
@@ -9,12 +10,32 @@ import 'package:smis_attendance_tracker/features/home/model/user_model.dart';
 import 'package:smis_attendance_tracker/routes/app_routes.dart';
 
 class DashboardScreen extends StatelessWidget {
-  final HomeController controller = Get.put(HomeController());
+  // Do not keep old instances around; create lazily and allow refresh to recreate
+  final HomeController controller = Get.put(
+    HomeController(),
+    tag: 'home_dashboard',
+  );
   final AddEmployeeController addEmployeeController = Get.put(
     AddEmployeeController(),
-  ); // <-- instantiate here
+    tag: 'add_emp_dashboard',
+  );
 
   DashboardScreen({Key? key}) : super(key: key);
+
+  Future<void> _reinitControllersAndRefresh(BuildContext context) async {
+    try {
+      // Delay just enough for RefreshIndicator to finish
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Skipped Deletion of Controllers
+
+      // Re-launch the same screen (like reloading the page)
+      Get.off(() => HomeView(), preventDuplicates: false);
+    } catch (e, st) {
+      AppLogger.e('Error during screen reinitialization', e, st);
+      EasyLoading.showError("Refresh failed. Try again.");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,17 +44,22 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(size.width * 0.04),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildStatusCards(size),
-              SizedBox(height: size.height * 0.025),
-              _buildSearchFilter(size, context),
-              SizedBox(height: size.height * 0.03),
-              _buildDirectReports(size, context),
-            ],
+        child: RefreshIndicator(
+          color: const Color(0xFF1B5E20),
+          onRefresh: () => _reinitControllersAndRefresh(context),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.all(size.width * 0.04),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildStatusCards(size),
+                SizedBox(height: size.height * 0.025),
+                _buildSearchFilter(size, context),
+                SizedBox(height: size.height * 0.03),
+                _buildDirectReports(size, context),
+              ],
+            ),
           ),
         ),
       ),
@@ -43,16 +69,16 @@ class DashboardScreen extends StatelessWidget {
   /// Status cards
   Widget _buildStatusCards(Size size) {
     final cardColors = [
-      Color(0xFF388E3C),
-      Color(0xFF1976D2),
-      Color(0xFFF57C00),
-      Color(0xFFD32F2F),
+      const Color(0xFF388E3C),
+      const Color(0xFF1976D2),
+      const Color(0xFFF57C00),
+      const Color(0xFFD32F2F),
     ];
     final bgColors = [
-      Color(0xFFE8F5E9),
-      Color(0xFFE3F2FD),
-      Color(0xFFFFF3E0),
-      Color(0xFFFFEBEE),
+      const Color(0xFFE8F5E9),
+      const Color(0xFFE3F2FD),
+      const Color(0xFFFFF3E0),
+      const Color(0xFFFFEBEE),
     ];
     final icons = [
       Icons.business,
@@ -60,12 +86,7 @@ class DashboardScreen extends StatelessWidget {
       Icons.home,
       Icons.cases_rounded,
     ];
-    final labels = [
-      'Green Center',
-      'Kanak Tower',
-      'Work From Home',
-      'On Leave',
-    ];
+    final labels = ['Green Center', 'Kanak Tower', 'Work From Home', 'Absent'];
 
     return Obx(() {
       final counts = [
@@ -77,7 +98,7 @@ class DashboardScreen extends StatelessWidget {
 
       return GridView.builder(
         shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
+        physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: size.width > 600 ? 4 : 2,
           crossAxisSpacing: size.width * 0.04,
@@ -95,7 +116,7 @@ class DashboardScreen extends StatelessWidget {
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.08),
                   blurRadius: 8,
-                  offset: Offset(0, 4),
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -111,7 +132,7 @@ class DashboardScreen extends StatelessWidget {
                     color: cardColors[index],
                   ),
                 ),
-                Spacer(),
+                const Spacer(),
                 Row(
                   children: [
                     Expanded(
@@ -129,7 +150,7 @@ class DashboardScreen extends StatelessWidget {
                         color: bgColors[index],
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       child: Icon(
                         icons[index],
                         color: cardColors[index],
@@ -160,7 +181,7 @@ class DashboardScreen extends StatelessWidget {
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.15),
                   blurRadius: 6,
-                  offset: Offset(0, 3),
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -180,7 +201,7 @@ class DashboardScreen extends StatelessWidget {
                       : null,
                   hintText: 'Search employee',
                   hintStyle: TextStyle(color: Colors.grey[500]),
-                  contentPadding: EdgeInsets.only(top: 14),
+                  contentPadding: const EdgeInsets.only(top: 14),
                 ),
               ),
             ),
@@ -199,7 +220,7 @@ class DashboardScreen extends StatelessWidget {
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.15),
                   blurRadius: 6,
-                  offset: Offset(0, 3),
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -215,7 +236,7 @@ class DashboardScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
@@ -232,7 +253,7 @@ class DashboardScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(
+                  const Expanded(
                     child: Text(
                       "Select Roles",
                       style: TextStyle(
@@ -242,12 +263,12 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close),
+                    icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Obx(
                 () => Column(
                   children: controller.roles.map((role) {
@@ -263,12 +284,12 @@ class DashboardScreen extends StatelessWidget {
                   }).toList(),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF1B5E20),
+                    backgroundColor: const Color(0xFF1B5E20),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -277,7 +298,7 @@ class DashboardScreen extends StatelessWidget {
                     controller.filterReportsByRole();
                     Navigator.pop(context);
                   },
-                  child: Text("Apply Filter"),
+                  child: const Text("Apply Filter"),
                 ),
               ),
             ],
@@ -316,7 +337,7 @@ class DashboardScreen extends StatelessWidget {
           }
           return ListView.builder(
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: reports.length,
             itemBuilder: (context, index) {
               final report = reports[index];
@@ -345,7 +366,7 @@ class DashboardScreen extends StatelessWidget {
             Column(
               children: [
                 IconButton(
-                  icon: Icon(Icons.calendar_month, color: Colors.blue),
+                  icon: const Icon(Icons.calendar_month, color: Colors.blue),
                   onPressed: () {
                     Get.toNamed(
                       AppRoutes.userAttendance,
@@ -358,7 +379,7 @@ class DashboardScreen extends StatelessWidget {
                   },
                 ),
                 IconButton(
-                  icon: Icon(Icons.call, color: Colors.green),
+                  icon: const Icon(Icons.call, color: Colors.green),
                   onPressed: () async {
                     final phone = report.mobileNo ?? "";
                     if (phone.isEmpty) {
@@ -373,11 +394,9 @@ class DashboardScreen extends StatelessWidget {
                       if (await canLaunchUrl(url)) {
                         await launchUrl(
                           url,
-                          mode: LaunchMode
-                              .externalApplication, // forces external dialer
+                          mode: LaunchMode.externalApplication,
                         );
                       } else {
-                        // fallback: try generic launch
                         await launchUrl(url);
                       }
                     } catch (e) {
@@ -402,7 +421,7 @@ class DashboardScreen extends StatelessWidget {
                       color: Colors.black87,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     '${report.role} • ${report.designation}',
                     style: TextStyle(
@@ -410,9 +429,12 @@ class DashboardScreen extends StatelessWidget {
                       color: Colors.grey[600],
                     ),
                   ),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: report.todayOffice.isEmpty
                           ? Colors.grey.shade200
@@ -451,14 +473,16 @@ class DashboardScreen extends StatelessWidget {
     final TextEditingController nameController = TextEditingController(
       text: report.userName,
     );
-    final TextEditingController designationController = TextEditingController(
-      text: report.designation,
-    );
     final TextEditingController phoneController = TextEditingController(
       text: report.mobileNo ?? "",
     );
 
-    final addEmployeeController = Get.find<AddEmployeeController>();
+    final addEmployeeController = Get.find<AddEmployeeController>(
+      tag: 'add_emp_dashboard',
+    );
+
+    // Preselect current designation
+    addEmployeeController.selectedDesignation.value = report.designation;
     addEmployeeController.isSuccessUpdateEMployee.value = false;
 
     showModalBottomSheet(
@@ -469,16 +493,15 @@ class DashboardScreen extends StatelessWidget {
       ),
       builder: (context) {
         return Obx(() {
+          // If update successful, close sheet and refresh list
           if (addEmployeeController.isSuccessUpdateEMployee.value) {
-            // Schedule for after build
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              addEmployeeController.isSuccessUpdateEMployee.value =
-                  false; // reset flag
-              controller.fetchDirectReports(); // refresh
-              if (Navigator.canPop(context))
-                Navigator.pop(context); // close modal
+              addEmployeeController.isSuccessUpdateEMployee.value = false;
+              controller.fetchDirectReports();
+              if (Navigator.canPop(context)) Navigator.pop(context);
             });
           }
+
           return Stack(
             children: [
               Padding(
@@ -515,7 +538,6 @@ class DashboardScreen extends StatelessWidget {
                       // PSID (read-only)
                       TextField(
                         enabled: false,
-
                         decoration: InputDecoration(
                           hintText: report.userId.toString(),
                           filled: true,
@@ -539,16 +561,53 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
 
-                      // Designation
-                      TextField(
-                        controller: designationController,
-                        decoration: InputDecoration(
-                          labelText: "Designation",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      // Designation Dropdown
+                      Obx(() {
+                        // Fallback logic: if the current designation isn't in the list, add it temporarily
+                        final List<String> availableDesignations =
+                            List<String>.from(
+                              addEmployeeController.designations,
+                            );
+
+                        if (report.designation.isNotEmpty &&
+                            !availableDesignations.contains(
+                              report.designation,
+                            )) {
+                          availableDesignations.insert(0, report.designation);
+                        }
+
+                        return DropdownButtonFormField<String>(
+                          value:
+                              addEmployeeController
+                                  .selectedDesignation
+                                  .value
+                                  .isNotEmpty
+                              ? addEmployeeController.selectedDesignation.value
+                              : (availableDesignations.isNotEmpty
+                                    ? availableDesignations.first
+                                    : null),
+                          items: availableDesignations
+                              .map(
+                                (designation) => DropdownMenuItem<String>(
+                                  value: designation,
+                                  child: Text(designation),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              addEmployeeController.selectedDesignation.value =
+                                  value;
+                            }
+                          },
+                          decoration: InputDecoration(
+                            labelText: "Designation",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      }),
                       const SizedBox(height: 16),
 
                       // Phone
@@ -579,7 +638,7 @@ class DashboardScreen extends StatelessWidget {
                             addEmployeeController.updateEmployee(
                               report.userId.toString(),
                               nameController.text,
-                              designationController.text,
+                              addEmployeeController.selectedDesignation.value,
                               phoneController.text,
                             );
                           },

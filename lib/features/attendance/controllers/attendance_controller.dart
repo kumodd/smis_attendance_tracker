@@ -10,12 +10,11 @@ import '../../../utils/logger.dart';
 enum AttendanceType { greenCenter, kanakTower, wfh, leave, currentDate }
 
 class AttendanceController extends GetxController {
-
   var status = "Not tracked yet".obs;
   var isLoading = false.obs;
-  var userId="".obs;
-  var canMark = false
-      .obs; // ✅ controls mark button enable/disable after successful track
+  var userId = "".obs;
+  var canMark =
+      false.obs; // ✅ controls mark button enable/disable after successful track
   final storage = GetStorage();
   final AttendanceService _attendanceService = AttendanceService();
 
@@ -28,10 +27,6 @@ class AttendanceController extends GetxController {
     final data = storage.read("locations") ?? [];
     return List<Map<String, dynamic>>.from(data);
   }
-
-
-
-
 
   /// Track location automatically on bottom sheet open
   @override
@@ -59,7 +54,9 @@ class AttendanceController extends GetxController {
         return;
       }
 
-      AppLogger.i("Current Position: lat=${pos.latitude}, lng=${pos.longitude}");
+      AppLogger.i(
+        "Current Position: lat=${pos.latitude}, lng=${pos.longitude}",
+      );
 
       bool matched = false;
       String? officeName;
@@ -70,8 +67,12 @@ class AttendanceController extends GetxController {
           final double lng = double.tryParse(loc["lng"].toString()) ?? 0.0;
           const double range = 500.0;
 
-          final distance =
-          Geolocator.distanceBetween(pos.latitude, pos.longitude, lat, lng);
+          final distance = Geolocator.distanceBetween(
+            pos.latitude,
+            pos.longitude,
+            lat,
+            lng,
+          );
 
           if (distance <= range) {
             officeName = loc["name"].toString();
@@ -132,9 +133,10 @@ class AttendanceController extends GetxController {
     }
   }
 
-
   /// Attendance history
   var attendanceList = <dynamic>[].obs;
+    var userAttendanceList = <dynamic>[].obs;
+
   var errorMessage = "".obs;
 
   Future<void> fetchAttendance() async {
@@ -148,8 +150,7 @@ class AttendanceController extends GetxController {
       if (response.statusCode == 200 && response.data["status"] == 200) {
         attendanceList.value = response.data["data"] ?? [];
       } else {
-        errorMessage.value =
-            response.data["message"] ?? "Failed to load data";
+        errorMessage.value = response.data["message"] ?? "Failed to load data";
       }
     } catch (e) {
       errorMessage.value = e.toString();
@@ -176,12 +177,16 @@ class AttendanceController extends GetxController {
       final response = await _attendanceService.getUserAttendance(userId);
 
       if (response.statusCode == 200 && response.data["status"] == 200) {
+        
         final List data = response.data["data"]["attendance"] ?? [];
+        userAttendanceList.value = response.data["data"]["attendance"];
+
         Map<DateTime, AttendanceType> mapped = {};
         for (var item in data) {
           final rawDate = item["captureDate"];
-          final officeName =
-          (item["officeName"] ?? "").toString().toUpperCase();
+          final officeName = (item["officeName"] ?? "")
+              .toString()
+              .toUpperCase();
 
           final date = DateFormat("yyyy-MM-dd HH:mm:ss.S").parse(rawDate);
           final key = DateTime(date.year, date.month, date.day);
@@ -206,7 +211,4 @@ class AttendanceController extends GetxController {
       isLoading.value = false;
     }
   }
-
-
-
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:smis_attendance_tracker/routes/app_routes.dart';
 import 'package:smis_attendance_tracker/services/user_service.dart';
 import 'package:smis_attendance_tracker/utils/logger.dart';
@@ -8,23 +9,41 @@ class AddEmployeeController extends GetxController {
   final employeeNameController = TextEditingController();
   final phoneController = TextEditingController();
   final psidController = TextEditingController();
-  final selectedDesignation = TextEditingController();
 
-  var isLoading = false.obs;
-  var isSuccessUpdateEMployee = false.obs;
+  final RxString selectedDesignation = ''.obs; // 🔹 Observable for dropdown
+  final RxList<String> designations = <String>[].obs;
+
+  final isLoading = false.obs;
+  final isSuccessUpdateEMployee = false.obs;
 
   final UserService _userService = UserService();
+  final GetStorage storage = GetStorage();
 
-  final List<String> designations = [
-    'IT executive',
-    'Sr. Project Manager',
-    'Tower Lead',
-    'Software Engineer',
-    'Project Coordinator',
-    'HR Manager',
-  ];
+  /// 🔹 Load designations from local storage
+  void _loadDesignations() {
+    final storedDesignations =
+        storage.read<List<dynamic>>("designations") ?? [];
 
-  /// Common snackbar helper
+    // Convert to List<String>
+    final List<String> stringList = storedDesignations
+        .map((e) => e.toString())
+        .toList();
+
+    designations.assignAll(stringList);
+
+    // 🔹 Set default selection if list is not empty
+    if (designations.isNotEmpty) {
+      selectedDesignation.value = designations.first;
+    }
+  }
+
+  /// 🔹 Phone validation helper
+  bool _isValidPhone(String phone) {
+    final regex = RegExp(r'^[0-9]{10}$');
+    return regex.hasMatch(phone);
+  }
+
+  /// 🔹 Show snackbar
   void _showSnackbar(String title, String message, {bool isError = false}) {
     Get.snackbar(
       title,
@@ -36,9 +55,13 @@ class AddEmployeeController extends GetxController {
     );
   }
 
+  /// 🔹 Add employee
   Future<void> addEmployee() async {
-    if (employeeNameController.text.trim().isEmpty ||
-        phoneController.text.trim().isEmpty) {
+    final name = employeeNameController.text.trim();
+    final phone = phoneController.text.trim();
+    final psid = psidController.text.trim();
+
+    if (name.isEmpty || phone.isEmpty) {
       _showSnackbar(
         'Error',
         'Please fill in all required fields.',
@@ -47,7 +70,15 @@ class AddEmployeeController extends GetxController {
       return;
     }
 
-    // Show loader
+    if (!_isValidPhone(phone)) {
+      _showSnackbar(
+        'Error',
+        'Phone number must be exactly 10 digits.',
+        isError: true,
+      );
+      return;
+    }
+
     Get.dialog(
       const Center(child: CircularProgressIndicator()),
       barrierDismissible: false,
@@ -57,12 +88,10 @@ class AddEmployeeController extends GetxController {
       AppLogger.i("Sending add user request...");
 
       final res = await _userService.addUser(
-        name: employeeNameController.text.trim(),
-        phone: phoneController.text.trim(),
-        psid: psidController.text.trim().isEmpty
-            ? null
-            : psidController.text.trim(),
-        designation: selectedDesignation.text.trim(),
+        name: name,
+        phone: phone,
+        psid: psid.isEmpty ? null : psid,
+        designation: selectedDesignation.value,
       );
 
       AppLogger.i("Add employee response: ${res.data}");
@@ -74,9 +103,10 @@ class AddEmployeeController extends GetxController {
         employeeNameController.clear();
         phoneController.clear();
         psidController.clear();
-        selectedDesignation.clear();
+        selectedDesignation.value = designations.isNotEmpty
+            ? designations.first
+            : '';
 
-        // Navigate after short delay (so user sees snackbar)
         await Future.delayed(const Duration(milliseconds: 600));
         Get.offAllNamed(AppRoutes.home);
       } else {
@@ -96,12 +126,22 @@ class AddEmployeeController extends GetxController {
     }
   }
 
+  /// 🔹 Update employee
   Future<void> updateEmployee(
     String psid,
     String name,
     String designation,
     String phone,
   ) async {
+    if (!_isValidPhone(phone)) {
+      _showSnackbar(
+        'Error',
+        'Phone number must be exactly 10 digits.',
+        isError: true,
+      );
+      return;
+    }
+
     isLoading.value = true;
     isSuccessUpdateEMployee.value = false;
 
@@ -115,14 +155,9 @@ class AddEmployeeController extends GetxController {
 
       if (res.statusCode == 200) {
         isSuccessUpdateEMployee.value = true;
-        _showSnackbar(
-          'Success',
-          "Employee updated successfully!",
-          isError: false,
-        );
+        _showSnackbar('Success', "Employee updated successfully!");
       } else {
         isSuccessUpdateEMployee.value = false;
-
         _showSnackbar(
           'Error',
           res.data?["message"] ?? "Something went wrong",
@@ -131,7 +166,6 @@ class AddEmployeeController extends GetxController {
       }
     } catch (e, st) {
       isSuccessUpdateEMployee.value = false;
-
       AppLogger.e("Update employee error", e, st);
       _showSnackbar('Error', e.toString(), isError: true);
     } finally {
@@ -140,10 +174,17 @@ class AddEmployeeController extends GetxController {
   }
 
   @override
+  void onInit() {
+    super.onInit();
+    _loadDesignations();
+  }
+
+  @override
   void onClose() {
-    employeeNameController.dispose();
-    phoneController.dispose();
-    psidController.dispose();
+    // If needed in future:
+    // employeeNameController.dispose();
+    // phoneController.dispose();
+    // psidController.dispose();
     super.onClose();
   }
 }

@@ -35,10 +35,10 @@ class HomeController extends GetxController {
   var wfhCount = 0.obs;
   var leaveCount = 0.obs;
 
-  // 🔹 Search & Role filtering
+  // Search & Role filtering
   var searchText = ''.obs;
 
-  // 🔹 Static roles
+  // Static roles
   var roles = ["All", "Tower Admin", "Reporting Manager", "User"].obs;
 
   // Multi-selection roles
@@ -55,7 +55,7 @@ class HomeController extends GetxController {
     fetchDirectReports();
   }
 
-  /// Load user info from storage
+  /// Load user info from local storage
   void _loadUserData() {
     final user = storage.read("user") ?? {};
     userName.value = user["name"] ?? "User Name";
@@ -66,11 +66,10 @@ class HomeController extends GetxController {
     userLocation.value = user["location"] ?? "-- --";
   }
 
-  /// 🔹 Combined Filtered reports
+  /// Filtered direct reports based on search and role
   List<UserModel> get filteredReports {
     Iterable<UserModel> list = directReports;
 
-    // Apply search filter
     if (searchText.isNotEmpty) {
       final query = searchText.value.toLowerCase();
       list = list.where(
@@ -81,7 +80,6 @@ class HomeController extends GetxController {
       );
     }
 
-    // Apply multi-role filter
     if (selectedRoles.isNotEmpty && !selectedRoles.contains("All")) {
       list = list.where((u) => selectedRoles.contains(u.role));
     }
@@ -89,7 +87,7 @@ class HomeController extends GetxController {
     return list.toList();
   }
 
-  /// Toggle role selection
+  /// Toggle role filtering
   void toggleRoleSelection(String role) {
     if (role == "All") {
       selectedRoles.clear();
@@ -104,41 +102,44 @@ class HomeController extends GetxController {
     }
   }
 
-  /// Update counts dynamically based on `todayOffice`
+  /// ✅ Corrected logic: treat null/empty todayOffice as leave
   void calculateCounts() {
-    String norm(String? v) => (v ?? '').toLowerCase().trim();
     AppLogger.d(
       "Calculating counts from ${directReports.length} direct reports",
     );
+    _resetCounts();
 
-    greenCenterCount.value = directReports
-        .where((u) => norm(u.todayOffice).contains('green center'))
-        .length;
+    for (var u in directReports) {
+      final office = (u.todayOffice ?? '').toLowerCase().trim();
 
-    kanakTowerCount.value = directReports
-        .where((u) => norm(u.todayOffice).contains('kanak tower'))
-        .length;
+      if (office.isEmpty) {
+        leaveCount.value++;
+      } else if (office.contains('green') && office.contains('center')) {
+        greenCenterCount.value++;
+      } else if (office.contains('kanak') && office.contains('tower')) {
+        kanakTowerCount.value++;
+      } else if (office.contains('wfh') ||
+          (office.contains('work') && office.contains('home'))) {
+        wfhCount.value++;
+      } else if (office.contains('leave') || office.contains('on leave')) {
+        leaveCount.value++;
+      } else {
+        // Fallback → treat unmatched text as leave
+        leaveCount.value++;
+      }
+    }
 
-    wfhCount.value = directReports.where((u) {
-      final t = norm(u.todayOffice);
-      return t.contains('work from home') || t.contains('wfh');
-    }).length;
-
-    leaveCount.value = directReports
-        .where(
-          (u) =>
-              norm(u.todayOffice).contains('on leave') ||
-              norm(u.todayOffice).contains('leave'),
-        )
-        .length;
+    AppLogger.d(
+      "Counts → Green: ${greenCenterCount.value}, Kanak: ${kanakTowerCount.value}, WFH: ${wfhCount.value}, Leave: ${leaveCount.value}",
+    );
   }
 
-  /// Update direct reports from API response
+  /// Set direct reports from API
   void setDirectReports(List<UserModel> users) {
     directReports.assignAll(users);
   }
 
-  /// Update greeting based on IST time
+  /// Greeting based on IST
   void _updateGreeting() {
     final nowUtc = DateTime.now().toUtc();
     final istOffset = const Duration(hours: 5, minutes: 30);
@@ -157,7 +158,7 @@ class HomeController extends GetxController {
     }
   }
 
-  /// Fetch direct reports from API
+  /// Fetch user list
   Future<void> fetchDirectReports() async {
     try {
       isLoadingReports.value = true;
@@ -165,31 +166,18 @@ class HomeController extends GetxController {
 
       if (response.statusCode == 200) {
         checkMyAttendance();
+
         final usersJson = response.data["data"]["users"] as List;
         final users = usersJson.map((u) => UserModel.fromJson(u)).toList();
 
         directReports.assignAll(users);
-
-        _resetCounts();
-        for (var user in users) {
-          final t = (user.todayOffice ?? '').toLowerCase().trim();
-          if (t.contains('green') && t.contains('center')) {
-            greenCenterCount.value++;
-          } else if (t.contains('kanak') && t.contains('tower')) {
-            kanakTowerCount.value++;
-          } else if (t.contains('wfh') ||
-              (t.contains('work') && t.contains('home'))) {
-            wfhCount.value++;
-          } else if (t.contains('leave') ||
-              (t.contains('on') && t.contains('leave'))) {
-            leaveCount.value++;
-          }
-        }
+        calculateCounts();
       } else {
         directReports.clear();
         _resetCounts();
       }
     } catch (e) {
+      AppLogger.e("Error fetching direct reports", e);
       directReports.clear();
       _resetCounts();
     } finally {
@@ -197,7 +185,7 @@ class HomeController extends GetxController {
     }
   }
 
-  /// Check if user has marked attendance today
+  /// Check own attendance
   Future<void> checkMyAttendance() async {
     try {
       await _attendanceController.fetchAttendance();
@@ -218,7 +206,6 @@ class HomeController extends GetxController {
     }
   }
 
-  /// Helper to reset counts
   void _resetCounts() {
     greenCenterCount.value = 0;
     kanakTowerCount.value = 0;
@@ -226,21 +213,17 @@ class HomeController extends GetxController {
     leaveCount.value = 0;
   }
 
-  /// Refresh user data dynamically
   void refreshUserData() {
     _loadUserData();
     fetchDirectReports();
   }
 
-  /// Change bottom navigation tab
   void changeTab(int index) {
     currentIndex.value = index;
   }
 
-  /// Trigger refresh after role filter
   void filterReportsByRole() => directReports.refresh();
 
-  /// Logout
   void logout() {
     storage.erase();
     Get.offAllNamed("/login");

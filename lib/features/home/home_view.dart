@@ -68,11 +68,8 @@ class HomeView extends StatelessWidget {
             return idx.clamp(0, maxIndex);
           })(),
           onTap: (index) {
-            // Adjust index if normal user (shifted because home tab removed)
             if (isNormalUser) {
-              controller.changeTab(
-                index + 1,
-              ); // My Attendance is index 1, Profile 2
+              controller.changeTab(index + 1);
             } else {
               controller.changeTab(index);
             }
@@ -118,7 +115,7 @@ class HomeView extends StatelessWidget {
           padding: EdgeInsets.symmetric(
             vertical: size.height * 0.03,
             horizontal: size.width * 0.05,
-          ),
+          ).copyWith(bottom: size.height * 0.09), // Extra space for button
           decoration: const BoxDecoration(
             color: Color(0xFF1B5E20),
             borderRadius: BorderRadius.only(
@@ -129,6 +126,7 @@ class HomeView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Top Row (Avatar + Menu)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -257,48 +255,53 @@ class HomeView extends StatelessWidget {
             ],
           ),
         ),
+
+        // Floating Mark Attendance Button
         Positioned(
-          bottom: -size.height * 0.03, // overlap slightly outside Stack
+          bottom: 0,
           left: size.width * 0.2,
           right: size.width * 0.2,
           child: Obx(
-            () => SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: controller.isAttendanceMarked.value
-                    ? null
-                    : () {
-                        Get.bottomSheet(
-                          const AttendanceViewBottomSheet(),
-                          isScrollControlled: true,
-                          backgroundColor: Colors.white,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(30),
+            () => Material(
+              color: Colors.transparent,
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: controller.isAttendanceMarked.value
+                      ? null
+                      : () {
+                          Get.bottomSheet(
+                            const AttendanceViewBottomSheet(),
+                            isScrollControlled: true,
+                            backgroundColor: Colors.white,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(30),
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF1B5E20),
-                  disabledBackgroundColor: Colors.grey.shade300,
-                  disabledForegroundColor: Colors.grey.shade600,
-                  side: const BorderSide(color: Color(0xFF1B5E20), width: 1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF1B5E20),
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    disabledForegroundColor: Colors.grey.shade600,
+                    side: const BorderSide(color: Color(0xFF1B5E20), width: 1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: size.height * 0.02),
+                    elevation: 0,
                   ),
-                  padding: EdgeInsets.symmetric(vertical: size.height * 0.02),
-                  elevation: 0,
-                ),
-                child: Text(
-                  'Mark Attendance',
-                  style: TextStyle(
-                    fontSize: size.width * 0.045,
-                    fontWeight: FontWeight.bold,
-                    color: controller.isAttendanceMarked.value
-                        ? Colors.grey.shade600
-                        : const Color(0xFF1B5E20),
+                  child: Text(
+                    'Mark Attendance',
+                    style: TextStyle(
+                      fontSize: size.width * 0.045,
+                      fontWeight: FontWeight.bold,
+                      color: controller.isAttendanceMarked.value
+                          ? Colors.grey.shade600
+                          : const Color(0xFF1B5E20),
+                    ),
                   ),
                 ),
               ),

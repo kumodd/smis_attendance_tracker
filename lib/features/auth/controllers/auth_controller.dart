@@ -23,9 +23,6 @@ class LoginController extends GetxController {
       return;
     }
 
-    // ✅ Remove leading 0s
-    userId = userId.replaceFirst(RegExp(r'^0+'), '');
-
     try {
       isLoading.value = true;
       final response = await _authService.sendOtp(userId);
@@ -48,10 +45,7 @@ class LoginController extends GetxController {
   }
 
   Future<void> verifyOtp() async {
-    String userId = (Get.arguments?["userId"] ?? "").replaceFirst(
-      RegExp(r'^0+'),
-      '',
-    );
+    String userId = (Get.arguments?["userId"] ?? "");
     final otp = otpController.text.trim();
 
     if (otp.isEmpty) {
@@ -73,6 +67,11 @@ class LoginController extends GetxController {
         storage.write("refreshToken", body["data"]["tokens"]["refreshToken"]);
         storage.write("user", body["data"]["user"]);
         storage.write("settings", body["data"]["settings"]);
+        final designations = (body["data"]["designations"] as List<dynamic>)
+            .map((e) => e["designation"])
+            .toList();
+
+        storage.write("designations", designations);
 
         final offices = body["data"]["offices"] ?? [];
         final geoFence = body["data"]["settings"]["geoFence"] ?? 100;

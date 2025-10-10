@@ -7,7 +7,6 @@ class AddEmployeeScreen extends StatelessWidget {
   AddEmployeeScreen({Key? key}) : super(key: key);
 
   final AddEmployeeController controller = Get.put(AddEmployeeController());
-  
 
   @override
   Widget build(BuildContext context) {
@@ -56,13 +55,13 @@ class AddEmployeeScreen extends StatelessWidget {
                     _buildInputField(
                       'Phone Number',
                       controller.phoneController,
-
                       keyboardType: TextInputType.phone,
                     ),
                     _buildInputField('PSID', controller.psidController),
-                    _buildInputField(
+                    _buildDropdownField(
                       'Designation',
                       controller.selectedDesignation,
+                      controller.designations,
                     ),
                     SizedBox(height: screenHeight * 0.1),
                   ],
@@ -99,6 +98,7 @@ class AddEmployeeScreen extends StatelessWidget {
     );
   }
 
+  /// 🔹 Regular text field
   Widget _buildInputField(
     String label,
     TextEditingController controller, {
@@ -108,7 +108,6 @@ class AddEmployeeScreen extends StatelessWidget {
     final screenWidth = Get.width;
     final screenHeight = Get.height;
 
-    // Check if label contains 'phone' (case-insensitive)
     final isPhoneField = label.toLowerCase().contains("phone");
 
     return Padding(
@@ -154,9 +153,10 @@ class AddEmployeeScreen extends StatelessWidget {
     );
   }
 
+  /// 🔹 Dropdown for designation
   Widget _buildDropdownField(
     String label,
-    RxString rxValue,
+    RxString selectedValue,
     List<String> items,
   ) {
     final screenWidth = Get.width;
@@ -186,13 +186,17 @@ class AddEmployeeScreen extends StatelessWidget {
               () => DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   isExpanded: true,
-                  value: rxValue.value,
+                  value: selectedValue.value.isEmpty && items.isNotEmpty
+                      ? items.first
+                      : selectedValue.value,
                   icon: const Icon(
                     Icons.keyboard_arrow_down,
                     color: Colors.grey,
                   ),
                   onChanged: (val) {
-                    if (val != null) rxValue.value = val;
+                    if (val != null) {
+                      selectedValue.value = val;
+                    }
                   },
                   items: items
                       .map(

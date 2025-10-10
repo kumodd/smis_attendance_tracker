@@ -10,8 +10,7 @@ class AttendanceView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     SizeConfig.init(context);
-
-    return Scaffold(
+ return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(SizeConfig.width(6)),
