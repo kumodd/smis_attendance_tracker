@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:dio/dio.dart';
 import 'package:smis_attendance_tracker/routes/app_routes.dart';
 import 'package:smis_attendance_tracker/services/user_service.dart';
 import 'package:smis_attendance_tracker/utils/logger.dart';
@@ -10,7 +11,7 @@ class AddEmployeeController extends GetxController {
   final phoneController = TextEditingController();
   final psidController = TextEditingController();
 
-  final RxString selectedDesignation = ''.obs; // 🔹 Observable for dropdown
+  final RxString selectedDesignation = ''.obs;
   final RxList<String> designations = <String>[].obs;
 
   final isLoading = false.obs;
@@ -19,31 +20,24 @@ class AddEmployeeController extends GetxController {
   final UserService _userService = UserService();
   final GetStorage storage = GetStorage();
 
-  /// 🔹 Load designations from local storage
   void _loadDesignations() {
     final storedDesignations =
         storage.read<List<dynamic>>("designations") ?? [];
-
-    // Convert to List<String>
     final List<String> stringList = storedDesignations
         .map((e) => e.toString())
         .toList();
-
     designations.assignAll(stringList);
 
-    // 🔹 Set default selection if list is not empty
     if (designations.isNotEmpty) {
       selectedDesignation.value = designations.first;
     }
   }
 
-  /// 🔹 Phone validation helper
   bool _isValidPhone(String phone) {
     final regex = RegExp(r'^[0-9]{10}$');
     return regex.hasMatch(phone);
   }
 
-  /// 🔹 Show snackbar
   void _showSnackbar(String title, String message, {bool isError = false}) {
     Get.snackbar(
       title,
@@ -55,7 +49,17 @@ class AddEmployeeController extends GetxController {
     );
   }
 
-  /// 🔹 Add employee
+  Future<void> _closeDialog() async {
+    for (int i = 0; i < 3; i++) {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+        await Future.delayed(const Duration(milliseconds: 100));
+      } else {
+        break;
+      }
+    }
+  }
+
   Future<void> addEmployee() async {
     final name = employeeNameController.text.trim();
     final phone = phoneController.text.trim();
@@ -85,8 +89,6 @@ class AddEmployeeController extends GetxController {
     );
 
     try {
-      AppLogger.i("Sending add user request...");
-
       final res = await _userService.addUser(
         name: name,
         phone: phone,
@@ -94,12 +96,10 @@ class AddEmployeeController extends GetxController {
         designation: selectedDesignation.value,
       );
 
-      AppLogger.i("Add employee response: ${res.data}");
+      await _closeDialog();
 
       if (res.statusCode == 200 || res.statusCode == 201) {
         _showSnackbar('Success', 'Employee added successfully!');
-
-        // Reset form
         employeeNameController.clear();
         phoneController.clear();
         psidController.clear();
@@ -107,26 +107,32 @@ class AddEmployeeController extends GetxController {
             ? designations.first
             : '';
 
-        await Future.delayed(const Duration(milliseconds: 600));
+        await Future.delayed(const Duration(milliseconds: 300));
         Get.offAllNamed(AppRoutes.home);
       } else {
+        final errorMsg = _extractErrorMessageFromData(res.data);
         _showSnackbar(
           'Error',
-          res.data?["message"] ?? "Something went wrong",
+          errorMsg ?? "Something went wrong",
           isError: true,
         );
       }
-    } catch (e, st) {
-      AppLogger.e("Add employee error", e, st);
-      _showSnackbar('Error', e.toString(), isError: true);
-    } finally {
-      if (Get.isDialogOpen ?? false) {
-        Get.back(); // Close loader safely
-      }
+    } on DioError catch (e) {
+      await _closeDialog();
+      final errorMessage = _extractErrorMessage(e);
+      AppLogger.e("Add employee DioError: $errorMessage");
+      _showSnackbar(
+        'Error',
+        errorMessage ?? "Something went wrong",
+        isError: true,
+      );
+    } catch (e) {
+      await _closeDialog();
+      AppLogger.e("Add employee unexpected error: $e");
+      _showSnackbar('Error', "Something went wrong", isError: true);
     }
   }
 
-  /// 🔹 Update employee
   Future<void> updateEmployee(
     String psid,
     String name,
@@ -157,19 +163,82 @@ class AddEmployeeController extends GetxController {
         isSuccessUpdateEMployee.value = true;
         _showSnackbar('Success', "Employee updated successfully!");
       } else {
+        final errorMsg = _extractErrorMessageFromData(res.data);
         isSuccessUpdateEMployee.value = false;
         _showSnackbar(
           'Error',
-          res.data?["message"] ?? "Something went wrong",
+          errorMsg ?? "Something went wrong",
           isError: true,
         );
       }
-    } catch (e, st) {
+    } on DioError catch (e) {
+      final errorMessage = _extractErrorMessage(e);
       isSuccessUpdateEMployee.value = false;
-      AppLogger.e("Update employee error", e, st);
-      _showSnackbar('Error', e.toString(), isError: true);
+      AppLogger.e("Update employee DioError: $errorMessage");
+      _showSnackbar(
+        'Error',
+        errorMessage ?? "Something went wrong",
+        isError: true,
+      );
+    } catch (e) {
+      isSuccessUpdateEMployee.value = false;
+      AppLogger.e("Update employee unexpected error: $e");
+      _showSnackbar('Error', "Something went wrong", isError: true);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Extract error message from DioError (like AuthController)
+  String? _extractErrorMessage(DioError e) {
+    try {
+      final data = e.response?.data;
+
+      if (data is Map) {
+        if (data.containsKey('error')) return data['error'].toString();
+        if (data.containsKey('message')) return data['message'].toString();
+        if (data.containsKey('errors')) {
+          final errors = data['errors'];
+          if (errors is Map) {
+            final firstKey = errors.keys.first;
+            final firstError = errors[firstKey];
+            if (firstError is List && firstError.isNotEmpty) {
+              return firstError.first.toString();
+            } else if (firstError is String) {
+              return firstError;
+            }
+          }
+        }
+      }
+
+      return e.message ?? "Unknown error occurred";
+    } catch (err) {
+      return "Failed to parse error";
+    }
+  }
+
+  /// Extract error message from normal response data when statusCode is error
+  String? _extractErrorMessageFromData(dynamic data) {
+    try {
+      if (data is Map) {
+        if (data.containsKey('error')) return data['error'].toString();
+        if (data.containsKey('message')) return data['message'].toString();
+        if (data.containsKey('errors')) {
+          final errors = data['errors'];
+          if (errors is Map) {
+            final firstKey = errors.keys.first;
+            final firstError = errors[firstKey];
+            if (firstError is List && firstError.isNotEmpty) {
+              return firstError.first.toString();
+            } else if (firstError is String) {
+              return firstError;
+            }
+          }
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -181,10 +250,9 @@ class AddEmployeeController extends GetxController {
 
   @override
   void onClose() {
-    // If needed in future:
-    // employeeNameController.dispose();
-    // phoneController.dispose();
-    // psidController.dispose();
+    employeeNameController.dispose();
+    phoneController.dispose();
+    psidController.dispose();
     super.onClose();
   }
 }

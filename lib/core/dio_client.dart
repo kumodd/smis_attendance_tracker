@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:smis_attendance_tracker/routes/app_routes.dart';
@@ -22,7 +23,7 @@ class ApiClient {
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 15),
       validateStatus: (status) {
-        // ✅ Only allow 2xx into onResponse
+        // ✅ Allow only 2xx responses as successful
         return status != null && status >= 200 && status < 300;
       },
     );
@@ -64,61 +65,72 @@ class ApiClient {
             return handler.reject(error);
           }
 
-          // 🔐 Handle token expiration (401)
-          if (status == 401) {
-            if (!_isRefreshing) {
-              _isRefreshing = true;
-              _refreshCompleter = Completer();
+          try {
+            // 🔐 Handle token expiration (401)
+            if (status == 401) {
+              if (!_isRefreshing) {
+                _isRefreshing = true;
+                _refreshCompleter = Completer();
 
-              final refreshed = await _refreshToken();
+                final refreshed = await _refreshToken();
 
-              _isRefreshing = false;
-              _refreshCompleter?.complete();
+                _isRefreshing = false;
+                _refreshCompleter?.complete();
 
-              if (refreshed) {
+                if (refreshed) {
+                  final newToken = storage.read("accessToken");
+                  error.requestOptions.headers["Authorization"] =
+                      "Bearer $newToken";
+
+                  AppLogger.i("🔁 Retrying request with new token...");
+                  final cloneReq = await _dio.fetch(error.requestOptions);
+                  return handler.resolve(cloneReq);
+                } else {
+                  AppLogger.e("🚪 Refresh failed. Logging out...");
+                  _logoutUser();
+                  return handler.reject(error);
+                }
+              } else {
+                AppLogger.d("⏳ Waiting for ongoing refresh...");
+                await _refreshCompleter?.future;
+
                 final newToken = storage.read("accessToken");
                 error.requestOptions.headers["Authorization"] =
                     "Bearer $newToken";
-
-                AppLogger.i("🔁 Retrying request with new token...");
                 final cloneReq = await _dio.fetch(error.requestOptions);
                 return handler.resolve(cloneReq);
-              } else {
-                AppLogger.e("🚪 Refresh failed. Logging out...");
-                _logoutUser();
-                return handler.reject(error); // ❗ Ensure no further processing
               }
             } else {
-              AppLogger.d("⏳ Waiting for ongoing refresh...");
-              await _refreshCompleter?.future;
+              // 📛 Other errors (403, 422, etc.)
+              final errorData = error.response?.data;
+              String message = "Something went wrong. Please try again.";
 
-              final newToken = storage.read("accessToken");
-              error.requestOptions.headers["Authorization"] =
-                  "Bearer $newToken";
-              final cloneReq = await _dio.fetch(error.requestOptions);
-              return handler.resolve(cloneReq);
+              if (errorData != null &&
+                  errorData is Map<String, dynamic> &&
+                  errorData.containsKey("error")) {
+                message = errorData["error"].toString();
+              } else if (error.message!.isNotEmpty) {
+                message = error.message!;
+              }
+
+              // 🧠 Log and show a snackbar
+              AppLogger.e("📣 API Error Message: $message");
+              _showErrorSnackbar(message);
+
+              return handler.reject(
+                DioError(
+                  requestOptions: error.requestOptions,
+                  response: error.response,
+                  error: message,
+                  type: DioErrorType.badResponse,
+                ),
+              );
             }
-          } else {
-            // 📛 Other errors (403, 422, etc.) — extract error message
-            final errorData = error.response?.data;
-            String message = "Something went wrong";
-
-            if (errorData != null &&
-                errorData is Map<String, dynamic> &&
-                errorData.containsKey("error")) {
-              message = errorData["error"];
-            }
-
-            AppLogger.e("📣 API Error Message: $message");
-
-            return handler.reject(
-              DioError(
-                requestOptions: error.requestOptions,
-                response: error.response,
-                error: message,
-                type: DioErrorType.badResponse,
-              ),
-            );
+          } catch (e, st) {
+            // 🚨 Catch any unexpected exception inside onError
+            AppLogger.e("⚠️ Unhandled exception in onError", e, st);
+            _showErrorSnackbar("Unexpected error occurred. Please try again.");
+            return handler.reject(error);
           }
         },
       ),
@@ -154,6 +166,7 @@ class ApiClient {
       }
     } catch (e, st) {
       AppLogger.e("❌ Refresh token exception", e, st);
+      _showErrorSnackbar("Session expired. Please log in again.");
     }
     return false;
   }
@@ -163,5 +176,19 @@ class ApiClient {
     storage.erase();
     Get.offAllNamed(AppRoutes.login);
     AppLogger.i("👋 User logged out, storage cleared.");
+  }
+
+  /// ⚠️ Show snackbar for any API or exception error
+  void _showErrorSnackbar(String message) {
+    Get.snackbar(
+      "Error",
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xFFB00020),
+      colorText: const Color(0xFFFFFFFF),
+      duration: const Duration(seconds: 3),
+      margin: const EdgeInsets.all(12),
+      borderRadius: 8,
+    );
   }
 }

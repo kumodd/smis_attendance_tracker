@@ -188,6 +188,7 @@ class DashboardScreen extends StatelessWidget {
             child: Obx(
               () => TextField(
                 onChanged: (value) => controller.searchText.value = value,
+                textAlignVertical: TextAlignVertical.center, // <-- Add this
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
@@ -201,7 +202,10 @@ class DashboardScreen extends StatelessWidget {
                       : null,
                   hintText: 'Search employee',
                   hintStyle: TextStyle(color: Colors.grey[500]),
-                  contentPadding: const EdgeInsets.only(top: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 0,
+                  ), // changed from only top: 14
                 ),
               ),
             ),

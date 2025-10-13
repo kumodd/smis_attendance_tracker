@@ -108,10 +108,30 @@ class LoginController extends GetxController {
 
   /// ✅ Helper to extract error message from DioError
   String? _extractErrorMessage(DioError e) {
-    if (e.response?.data is Map && e.response?.data["error"] != null) {
-      return e.response?.data["error"].toString();
+    try {
+      final data = e.response?.data;
+
+      if (data is Map) {
+        if (data.containsKey('error')) return data['error'].toString();
+        if (data.containsKey('message')) return data['message'].toString();
+        if (data.containsKey('errors')) {
+          final errors = data['errors'];
+          if (errors is Map) {
+            final firstKey = errors.keys.first;
+            final firstError = errors[firstKey];
+            if (firstError is List && firstError.isNotEmpty) {
+              return firstError.first.toString();
+            } else if (firstError is String) {
+              return firstError;
+            }
+          }
+        }
+      }
+
+      return e.message ?? "Unknown error occurred";
+    } catch (err) {
+      return "Failed to parse error";
     }
-    return e.message ?? "Unknown error occurred";
   }
 
   /// ✅ Check if user is logged in (for splash/initial route)

@@ -169,6 +169,7 @@ class AttendanceController extends GetxController {
     "ON LEAVE": AttendanceType.leave,
   };
 
+    /// Fetch user attendance
   Future<void> fetchUserAttendance(String userId) async {
     try {
       isLoading.value = true;
@@ -177,28 +178,30 @@ class AttendanceController extends GetxController {
       final response = await _attendanceService.getUserAttendance(userId);
 
       if (response.statusCode == 200 && response.data["status"] == 200) {
-        
         final List data = response.data["data"]["attendance"] ?? [];
-        userAttendanceList.value = response.data["data"]["attendance"];
+        attendanceList.value = List<Map<String, dynamic>>.from(data);
 
         Map<DateTime, AttendanceType> mapped = {};
-        for (var item in data) {
-          final rawDate = item["captureDate"];
-          final officeName = (item["officeName"] ?? "")
-              .toString()
-              .toUpperCase();
+        for (var item in attendanceList) {
+          final rawDate = item["captureDate"] ?? "";
+          final officeName = (item["officeName"] ?? "").toString().toUpperCase();
 
-          final date = DateFormat("yyyy-MM-dd HH:mm:ss.S").parse(rawDate);
-          final key = DateTime(date.year, date.month, date.day);
+          try {
+            final date = DateFormat("yyyy-MM-dd HH:mm:ss.S").parse(rawDate);
+            final key = DateTime(date.year, date.month, date.day);
 
-          if (officeNameMap.containsKey(officeName)) {
-            mapped[key] = officeNameMap[officeName]!;
+            if (officeNameMap.containsKey(officeName)) {
+              mapped[key] = officeNameMap[officeName]!;
+            }
+          } catch (e) {
+            AppLogger.e("Error parsing captureDate: $rawDate -> $e");
           }
         }
 
+        // Mark current date separately
         final today = DateTime.now();
-        final currentDate = DateTime(today.year, today.month, today.day);
-        mapped[currentDate] = AttendanceType.currentDate;
+        mapped[DateTime(today.year, today.month, today.day)] =
+            AttendanceType.currentDate;
 
         attendanceMap.value = mapped;
       } else {
@@ -207,6 +210,7 @@ class AttendanceController extends GetxController {
       }
     } catch (e) {
       errorMessage.value = "Error: $e";
+      AppLogger.e("fetchUserAttendance failed: $e");
     } finally {
       isLoading.value = false;
     }

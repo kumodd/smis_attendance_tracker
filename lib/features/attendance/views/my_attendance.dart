@@ -20,12 +20,10 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
   late DateTime _focusedDay;
   DateTime? _selectedDay;
 
-
-
   @override
   void initState() {
     super.initState();
-    
+
     attendanceController.fetchAttendance();
 
     // Safe read of Get.arguments
@@ -120,134 +118,145 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
                 BoxShadow(color: Colors.black12, blurRadius: 2),
               ],
             ),
-            child: Column(
-              children: [
-                // Month header with arrows
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios, size: 18),
-                        onPressed: () {
-                          setState(() {
-                            _focusedDay = DateTime(
-                              _focusedDay.year,
-                              _focusedDay.month - 1,
-                              1,
-                            );
-                          });
-                        },
-                      ),
-                      Text(
-                        "${_monthName(_focusedDay.month)}, ${_focusedDay.year}",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.arrow_forward_ios, size: 18),
-                        onPressed: () {
-                          setState(() {
-                            _focusedDay = DateTime(
-                              _focusedDay.year,
-                              _focusedDay.month + 1,
-                              1,
-                            );
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Calendar
-                TableCalendar(
-                  focusedDay: _focusedDay,
-                  firstDay: DateTime(_focusedDay.year, _focusedDay.month, 1),
-                  lastDay: DateTime(_focusedDay.year, _focusedDay.month + 1, 0),
-                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                  calendarFormat: CalendarFormat.month,
-                  startingDayOfWeek: StartingDayOfWeek.sunday,
-                  availableCalendarFormats: const {
-                    CalendarFormat.month: 'Month',
-                  },
-                  headerVisible: false,
-                  onDaySelected: (selectedDay, focusedDay) {
-                    setState(() {
-                      _selectedDay = selectedDay;
-                      _focusedDay = focusedDay;
-                    });
-
-                    _showAttendanceForDay(selectedDay);
-                  },
-                  calendarStyle: const CalendarStyle(
-                    todayDecoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.transparent,
+            child: SingleChildScrollView(
+              // <-- Wrap Column here to enable scrolling
+              child: Column(
+                mainAxisSize: MainAxisSize.min, // <-- Shrink to content height
+                children: [
+                  // Month header with arrows
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
-                    todayTextStyle: TextStyle(color: Colors.black),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios, size: 18),
+                          onPressed: () {
+                            setState(() {
+                              _focusedDay = DateTime(
+                                _focusedDay.year,
+                                _focusedDay.month - 1,
+                                1,
+                              );
+                            });
+                          },
+                        ),
+                        Text(
+                          "${_monthName(_focusedDay.month)}, ${_focusedDay.year}",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.arrow_forward_ios, size: 18),
+                          onPressed: () {
+                            setState(() {
+                              _focusedDay = DateTime(
+                                _focusedDay.year,
+                                _focusedDay.month + 1,
+                                1,
+                              );
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  calendarBuilders: CalendarBuilders(
-                    defaultBuilder: (context, date, _) {
-                      final DateTime key = DateTime(
-                        date.year,
-                        date.month,
-                        date.day,
-                      );
-                      final office = attendanceMap[key];
 
-                      if (office != null && office.isNotEmpty) {
-                        final color = _getStatusColor(office);
+                  // Calendar
+                  TableCalendar(
+                    focusedDay: _focusedDay,
+                    firstDay: DateTime(_focusedDay.year, _focusedDay.month, 1),
+                    lastDay: DateTime(
+                      _focusedDay.year,
+                      _focusedDay.month + 1,
+                      0,
+                    ),
+                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                    calendarFormat: CalendarFormat.month,
+                    startingDayOfWeek: StartingDayOfWeek.sunday,
+                    availableCalendarFormats: const {
+                      CalendarFormat.month: 'Month',
+                    },
+                    headerVisible: false,
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
 
-                        return Center(
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${date.day}',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                      _showAttendanceForDay(selectedDay);
+                    },
+                    calendarStyle: const CalendarStyle(
+                      todayDecoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.transparent,
+                      ),
+                      todayTextStyle: TextStyle(color: Colors.black),
+                    ),
+                    calendarBuilders: CalendarBuilders(
+                      defaultBuilder: (context, date, _) {
+                        final DateTime key = DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                        );
+                        final office = attendanceMap[key];
+
+                        if (office != null && office.isNotEmpty) {
+                          final color = _getStatusColor(office);
+
+                          return Center(
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${date.day}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      }
-                      return null;
-                    },
+                          );
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                // Legend
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Wrap(
-                    spacing: 16,
-                    runSpacing: 8,
-                    children: [
-                      _legendItem(const Color(0xFF73D28C), "ITC Green Center"),
-                      _legendItem(Colors.orange, "Work From Home"),
-                      _legendItem(Colors.blue, "Kanak Tower"),
-                      _legendItem(Colors.redAccent, "On Leave"),
-                    ],
+                  // Legend
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Wrap(
+                      spacing: 16,
+                      runSpacing: 8,
+                      children: [
+                        _legendItem(
+                          const Color(0xFF73D28C),
+                          "ITC Green Center",
+                        ),
+                        _legendItem(Colors.orange, "Work From Home"),
+                        _legendItem(Colors.blue, "Kanak Tower"),
+                        _legendItem(Colors.redAccent, "On Leave"),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-              ],
+                  const SizedBox(height: 6),
+                ],
+              ),
             ),
           );
         }),
@@ -376,15 +385,16 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
                       "${_formatDate(day)}",
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
 
-                // Time row
+                // Attendance time
                 Row(
                   children: [
                     const Icon(
@@ -394,36 +404,39 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      "Time: ${matches[0]['time'] ?? '—'}",
+                      "Attendance time: ${matches[0]['time'] ?? 'N/A'}",
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
-                if (matches.length > 1)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                // Optionally, display userId
+                if (matches[0]['userId'] != null &&
+                    matches[0]['userId']!.isNotEmpty) ...[
+                  /* Row(
                     children: [
-                      const Text(
-                        "Other records:",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      ...matches.skip(1).map((m) {
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            "${m['office'] ?? 'Unknown'} at ${m['time'] ?? '—'}",
-                            style: const TextStyle(fontSize: 14),
+                      const Icon(Icons.person, size: 18, color: Colors.black54),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "User ID: ${matches[0]['userId']}",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black54,
                           ),
-                        );
-                      }).toList(),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
-                  ),
+                  ),*/
+                ],
               ],
             ),
           ),
@@ -432,18 +445,8 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    // Format date as: 23 September 2025, Tuesday
-    final day = date.day.toString().padLeft(2, '0');
-    final month = _monthName(date.month);
-    final year = date.year;
-    final weekday = _weekdayName(date.weekday);
-    return "$day $month $year, $weekday";
-  }
-
   String _monthName(int month) {
-    const months = [
-      "",
+    const monthNames = [
       "January",
       "February",
       "March",
@@ -457,20 +460,12 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
       "November",
       "December",
     ];
-    return (month >= 1 && month <= 12) ? months[month] : "";
+
+    if (month < 1 || month > 12) return "Unknown";
+    return monthNames[month - 1];
   }
 
-  String _weekdayName(int weekday) {
-    const names = [
-      "",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-      "Sunday",
-    ];
-    return (weekday >= 1 && weekday <= 7) ? names[weekday] : "";
+  String _formatDate(DateTime date) {
+    return DateFormat("dd MMM yyyy").format(date);
   }
 }
