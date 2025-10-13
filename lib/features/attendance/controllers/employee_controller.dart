@@ -65,7 +65,7 @@ class AddEmployeeController extends GetxController {
     final phone = phoneController.text.trim();
     final psid = psidController.text.trim();
 
-    if (name.isEmpty || phone.isEmpty) {
+    if (name.isEmpty || phone.isEmpty || psid.isEmpty) {
       _showSnackbar(
         'Error',
         'Please fill in all required fields.',
@@ -78,6 +78,14 @@ class AddEmployeeController extends GetxController {
       _showSnackbar(
         'Error',
         'Phone number must be exactly 10 digits.',
+        isError: true,
+      );
+      return;
+    }
+    if (psid.length < 3) {
+      _showSnackbar(
+        'Error',
+        'PSID must be at-lease 3 digits long.',
         isError: true,
       );
       return;

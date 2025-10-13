@@ -187,6 +187,7 @@ class DashboardScreen extends StatelessWidget {
             ),
             child: Obx(
               () => TextField(
+                controller: controller.searchTextController,
                 onChanged: (value) => controller.searchText.value = value,
                 textAlignVertical: TextAlignVertical.center, // <-- Add this
                 decoration: InputDecoration(
@@ -197,7 +198,12 @@ class DashboardScreen extends StatelessWidget {
                   suffixIcon: controller.searchText.isNotEmpty
                       ? IconButton(
                           icon: Icon(Icons.clear, color: Colors.grey[600]),
-                          onPressed: () => controller.searchText.value = "",
+                          onPressed: () {
+                            controller.searchTextController
+                                .clear(); // Clear the field
+                            controller.searchText.value =
+                                ''; // Clear the observable
+                          },
                         )
                       : null,
                   hintText: 'Search employee',

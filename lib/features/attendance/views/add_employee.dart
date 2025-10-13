@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show LengthLimitingTextInputFormatter;
+import 'package:flutter/services.dart'
+    show
+        LengthLimitingTextInputFormatter,
+        FilteringTextInputFormatter,
+        TextInputFormatter;
 import 'package:get/get.dart';
 import 'package:smis_attendance_tracker/features/attendance/controllers/employee_controller.dart';
 
@@ -57,7 +61,11 @@ class AddEmployeeScreen extends StatelessWidget {
                       controller.phoneController,
                       keyboardType: TextInputType.phone,
                     ),
-                    _buildInputField('PSID', controller.psidController),
+                    _buildInputField(
+                      'PSID',
+                      controller.psidController,
+                      keyboardType: TextInputType.number,
+                    ),
                     _buildDropdownField(
                       'Designation',
                       controller.selectedDesignation,
@@ -98,7 +106,7 @@ class AddEmployeeScreen extends StatelessWidget {
     );
   }
 
-  /// 🔹 Regular text field
+  /// 🔹 Input field with optional length/input formatters
   Widget _buildInputField(
     String label,
     TextEditingController controller, {
@@ -109,6 +117,22 @@ class AddEmployeeScreen extends StatelessWidget {
     final screenHeight = Get.height;
 
     final isPhoneField = label.toLowerCase().contains("phone");
+    final isPsidField = label.toLowerCase().contains("psid");
+
+    // Input formatters based on field type
+    final inputFormatters = <TextInputFormatter>[];
+
+    if (isPhoneField) {
+      inputFormatters.addAll([
+        LengthLimitingTextInputFormatter(10),
+        FilteringTextInputFormatter.digitsOnly,
+      ]);
+    } else if (isPsidField) {
+      inputFormatters.addAll([
+        LengthLimitingTextInputFormatter(8),
+        FilteringTextInputFormatter.digitsOnly,
+      ]);
+    }
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: screenHeight * 0.015),
@@ -127,9 +151,7 @@ class AddEmployeeScreen extends StatelessWidget {
           TextField(
             controller: controller,
             keyboardType: keyboardType,
-            inputFormatters: isPhoneField
-                ? [LengthLimitingTextInputFormatter(10)]
-                : [],
+            inputFormatters: inputFormatters,
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.grey[200],

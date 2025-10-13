@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
@@ -124,6 +125,10 @@ class AttendanceController extends GetxController {
       } else {
         status.value = "❌ Failed to mark attendance: ${response.statusMessage}";
       }
+    } on DioError catch (e) {
+      final errorMessage = _extractErrorMessage(e);
+      status.value = "Error: $errorMessage";
+      AppLogger.e("markTodayAttendance DioError: $errorMessage");
     } catch (e, st) {
       status.value = "Error: $e";
       AppLogger.e("markTodayAttendance failed", e, st);
@@ -135,7 +140,7 @@ class AttendanceController extends GetxController {
 
   /// Attendance history
   var attendanceList = <dynamic>[].obs;
-    var userAttendanceList = <dynamic>[].obs;
+  var userAttendanceList = <dynamic>[].obs;
 
   var errorMessage = "".obs;
 
@@ -169,7 +174,7 @@ class AttendanceController extends GetxController {
     "ON LEAVE": AttendanceType.leave,
   };
 
-    /// Fetch user attendance
+  /// Fetch user attendance
   Future<void> fetchUserAttendance(String userId) async {
     try {
       isLoading.value = true;
@@ -184,7 +189,9 @@ class AttendanceController extends GetxController {
         Map<DateTime, AttendanceType> mapped = {};
         for (var item in attendanceList) {
           final rawDate = item["captureDate"] ?? "";
-          final officeName = (item["officeName"] ?? "").toString().toUpperCase();
+          final officeName = (item["officeName"] ?? "")
+              .toString()
+              .toUpperCase();
 
           try {
             final date = DateFormat("yyyy-MM-dd HH:mm:ss.S").parse(rawDate);
@@ -213,6 +220,33 @@ class AttendanceController extends GetxController {
       AppLogger.e("fetchUserAttendance failed: $e");
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  String? _extractErrorMessage(DioError e) {
+    try {
+      final data = e.response?.data;
+
+      if (data is Map) {
+        if (data.containsKey('error')) return data['error'].toString();
+        if (data.containsKey('message')) return data['message'].toString();
+        if (data.containsKey('errors')) {
+          final errors = data['errors'];
+          if (errors is Map) {
+            final firstKey = errors.keys.first;
+            final firstError = errors[firstKey];
+            if (firstError is List && firstError.isNotEmpty) {
+              return firstError.first.toString();
+            } else if (firstError is String) {
+              return firstError;
+            }
+          }
+        }
+      }
+
+      return e.message ?? "Network error occurred";
+    } catch (err) {
+      return "Failed to parse error";
     }
   }
 }

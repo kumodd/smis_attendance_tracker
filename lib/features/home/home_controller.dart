@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:smis_attendance_tracker/features/home/model/user_model.dart';
@@ -14,6 +15,8 @@ class HomeController extends GetxController {
 
   // Bottom navigation
   var currentIndex = 0.obs;
+  final TextEditingController searchTextController = TextEditingController();
+
 
   // Sticky header user info
   var userName = ''.obs;

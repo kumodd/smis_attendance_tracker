@@ -107,6 +107,8 @@ class HomeView extends StatelessWidget {
   }
 
   Widget _buildTopSection(Size size, bool isNormalUser) {
+    final isHOD = controller.userRole.value.toLowerCase().contains("hod");
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -115,7 +117,7 @@ class HomeView extends StatelessWidget {
           padding: EdgeInsets.symmetric(
             vertical: size.height * 0.03,
             horizontal: size.width * 0.05,
-          ).copyWith(bottom: size.height * 0.09), // Extra space for button
+          ).copyWith(bottom: size.height * (isHOD ? 0.03 : 0.09)),
           decoration: const BoxDecoration(
             color: Color(0xFF1B5E20),
             borderRadius: BorderRadius.only(
@@ -189,7 +191,79 @@ class HomeView extends StatelessWidget {
                                       InkWell(
                                         onTap: () {
                                           Get.back();
-                                          controller.logout();
+                                          Get.defaultDialog(
+                                            title: "Confirm Logout",
+                                            middleText:
+                                                "Are you sure you want to logout?",
+                                            radius: 12,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 20,
+                                                  vertical: 10,
+                                                ),
+                                            actions: [
+                                              Expanded(
+                                                child: OutlinedButton(
+                                                  onPressed: () => Get.back(),
+                                                  style: OutlinedButton.styleFrom(
+                                                    foregroundColor:
+                                                        const Color(0xFF1B5E20),
+                                                    side: const BorderSide(
+                                                      color: Color(0xFF1B5E20),
+                                                    ),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            30,
+                                                          ),
+                                                    ),
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          vertical: 12,
+                                                        ),
+                                                  ),
+                                                  child: const Text(
+                                                    "Cancel",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: ElevatedButton(
+                                                  onPressed: () {
+                                                    Get.back();
+                                                    controller.logout();
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        const Color(0xFF1B5E20),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            30,
+                                                          ),
+                                                    ),
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          vertical: 12,
+                                                        ),
+                                                  ),
+                                                  child: const Text(
+                                                    "Logout",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                          ;
                                         },
                                         child: Container(
                                           width: double.infinity,
@@ -256,58 +330,64 @@ class HomeView extends StatelessWidget {
           ),
         ),
 
-        // Floating Mark Attendance Button
-        Positioned(
-          bottom: 0,
-          left: size.width * 0.2,
-          right: size.width * 0.2,
-          child: Obx(
-            () => Material(
-              color: Colors.transparent,
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: controller.isAttendanceMarked.value
-                      ? null
-                      : () {
-                          Get.bottomSheet(
-                            const AttendanceViewBottomSheet(),
-                            isScrollControlled: true,
-                            backgroundColor: Colors.white,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(30),
+        // ✅ Mark Attendance Button (only if not HOD)
+        if (!isHOD)
+          Positioned(
+            bottom: 0,
+            left: size.width * 0.2,
+            right: size.width * 0.2,
+            child: Obx(
+              () => Material(
+                color: Colors.transparent,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: controller.isAttendanceMarked.value
+                        ? null
+                        : () {
+                            Get.bottomSheet(
+                              const AttendanceViewBottomSheet(),
+                              isScrollControlled: true,
+                              backgroundColor: Colors.white,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(30),
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF1B5E20),
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    disabledForegroundColor: Colors.grey.shade600,
-                    side: const BorderSide(color: Color(0xFF1B5E20), width: 1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                            );
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF1B5E20),
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      disabledForegroundColor: Colors.grey.shade600,
+                      side: const BorderSide(
+                        color: Color(0xFF1B5E20),
+                        width: 1,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        vertical: size.height * 0.02,
+                      ),
+                      elevation: 0,
                     ),
-                    padding: EdgeInsets.symmetric(vertical: size.height * 0.02),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Mark Attendance',
-                    style: TextStyle(
-                      fontSize: size.width * 0.045,
-                      fontWeight: FontWeight.bold,
-                      color: controller.isAttendanceMarked.value
-                          ? Colors.grey.shade600
-                          : const Color(0xFF1B5E20),
+                    child: Text(
+                      'Mark Attendance',
+                      style: TextStyle(
+                        fontSize: size.width * 0.045,
+                        fontWeight: FontWeight.bold,
+                        color: controller.isAttendanceMarked.value
+                            ? Colors.grey.shade600
+                            : const Color(0xFF1B5E20),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
