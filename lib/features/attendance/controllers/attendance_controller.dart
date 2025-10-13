@@ -33,11 +33,11 @@ class AttendanceController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _autoTrackLocation();
+    //_autoTrackLocation();
     AppLogger.i("AttendanceController initialized user id=>$userId");
   }
 
-  Future<void> _autoTrackLocation() async {
+  Future<void> autoTrackLocation() async {
     if (!isLoading.value) {
       await trackLocation();
     }

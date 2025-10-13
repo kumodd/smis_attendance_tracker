@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:smis_attendance_tracker/features/attendance/controllers/attendance_controller.dart';
 import 'package:smis_attendance_tracker/features/attendance/views/my_attendance.dart';
 import 'package:smis_attendance_tracker/features/home/dashboard_view.dart';
 import 'package:smis_attendance_tracker/features/attendance/views/attendance_view.dart';
@@ -12,6 +13,9 @@ class HomeView extends StatelessWidget {
   HomeView({super.key});
 
   final HomeController controller = Get.put(HomeController());
+  final AttendanceController attendanceController = Get.put(
+    AttendanceController(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -355,6 +359,7 @@ class HomeView extends StatelessWidget {
                                 ),
                               ),
                             );
+                            attendanceController.autoTrackLocation();
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
