@@ -227,6 +227,7 @@ class AttendanceController extends GetxController {
     try {
       final data = e.response?.data;
 
+
       if (data is Map) {
         if (data.containsKey('error')) return data['error'].toString();
         if (data.containsKey('message')) return data['message'].toString();
