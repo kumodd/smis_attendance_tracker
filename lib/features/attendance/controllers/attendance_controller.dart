@@ -123,11 +123,11 @@ class AttendanceController extends GetxController {
       if (response.statusCode == 200) {
         status.value = "✅ Attendance marked successfully";
       } else {
-        status.value = "❌ Failed to mark attendance: ${response.statusMessage}";
+        status.value = "❌ Failed to mark attendance!";
       }
     } on DioError catch (e) {
       final errorMessage = _extractErrorMessage(e);
-      status.value = "Error: $errorMessage";
+      status.value = "❌ Failed to mark attendance!\n $errorMessage";
       AppLogger.e("markTodayAttendance DioError: $errorMessage");
     } catch (e, st) {
       status.value = "Error: $e";
@@ -244,7 +244,7 @@ class AttendanceController extends GetxController {
         }
       }
 
-      return e.message ?? "Network error occurred";
+      return e.message ?? "Please check your network connection";
     } catch (err) {
       return "Failed to parse error";
     }

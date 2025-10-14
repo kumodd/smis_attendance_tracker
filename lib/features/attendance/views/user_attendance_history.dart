@@ -111,11 +111,11 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                 spacing: 16,
                 runSpacing: 8,
                 children: [
-                  _legendItem(Colors.black87, "Current Date"),
                   _legendItem(const Color(0xFF73D28C), "ITC Green Center"),
-                  _legendItem(Colors.blue, "Kanak Tower"),
                   _legendItem(Colors.orange, "Work From Home"),
-                  _legendItem(Colors.redAccent, "On Leave"),
+
+                  _legendItem(Colors.blue, "Kanak Tower"),
+                  _legendItem(Colors.redAccent, "Absent"),
                 ],
               ),
             ],

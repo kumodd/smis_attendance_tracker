@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:smis_attendance_tracker/features/attendance/controllers/employee_controller.dart';
@@ -625,6 +626,9 @@ class DashboardScreen extends StatelessWidget {
                         controller: phoneController,
                         keyboardType: TextInputType.phone,
                         maxLength: 10,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         decoration: InputDecoration(
                           labelText: "Phone Number",
                           border: OutlineInputBorder(

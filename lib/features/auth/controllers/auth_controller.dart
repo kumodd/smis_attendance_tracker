@@ -22,12 +22,24 @@ class LoginController extends GetxController {
       Get.snackbar("Error", "ADID cannot be empty");
       return;
     }
+    if (userId.length < 3) {
+      Get.snackbar(
+        "Error",
+        "ADID must be at least 3 characters long",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFFB00020),
+        colorText: const Color(0xFFFFFFFF),
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(12),
+        borderRadius: 8,
+      );
+      return;
+    }
 
     try {
       isLoading.value = true;
       final response = await _authService.sendOtp(userId);
       AppLogger.i("Send OTP Response: ${response.data}");
-
       if (response.statusCode == 200) {
         Get.snackbar("Success", "OTP sent successfully");
         Get.toNamed(AppRoutes.otp, arguments: {"userId": userId});
@@ -35,7 +47,7 @@ class LoginController extends GetxController {
     } on DioError catch (e) {
       final errorMessage = _extractErrorMessage(e);
       AppLogger.e("Send OTP Error: $errorMessage");
-      Get.snackbar("Error", errorMessage ?? "Something went wrong");
+      //Get.snackbar("Error", errorMessage ?? "Something went wrong");
     } catch (e) {
       AppLogger.e("Unexpected error: $e");
       Get.snackbar("Error", "Something went wrong");
@@ -97,7 +109,7 @@ class LoginController extends GetxController {
     } on DioError catch (e) {
       final errorMessage = _extractErrorMessage(e);
       AppLogger.e("Verify OTP DioError: $errorMessage");
-      Get.snackbar("Error", errorMessage ?? "Something went wrong");
+      //Get.snackbar("Error", errorMessage ?? "Something went wrong");
     } catch (e) {
       AppLogger.e("Unexpected error: $e");
       Get.snackbar("Error", "Something went wrong");

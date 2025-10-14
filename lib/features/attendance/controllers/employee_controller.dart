@@ -147,6 +147,10 @@ class AddEmployeeController extends GetxController {
     String designation,
     String phone,
   ) async {
+    if (name.isEmpty || phone.isEmpty) {
+      _showSnackbar('Error', 'Please fill all fields.', isError: true);
+      return;
+    }
     if (!_isValidPhone(phone)) {
       _showSnackbar(
         'Error',

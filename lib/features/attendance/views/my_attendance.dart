@@ -250,7 +250,7 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
                         ),
                         _legendItem(Colors.orange, "Work From Home"),
                         _legendItem(Colors.blue, "Kanak Tower"),
-                        _legendItem(Colors.redAccent, "On Leave"),
+                        _legendItem(Colors.redAccent, "Absent"),
                       ],
                     ),
                   ),

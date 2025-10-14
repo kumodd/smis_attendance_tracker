@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:smis_attendance_tracker/core/constants.dart';
 import 'package:smis_attendance_tracker/core/responsive.dart';
@@ -88,6 +89,8 @@ class LoginView extends StatelessWidget {
                 TextFormField(
                   controller: controller.userIdController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  maxLength: 8,
                   decoration: const InputDecoration(
                     labelText: "Enter your ADID",
                     border: OutlineInputBorder(),
