@@ -51,6 +51,17 @@ class ProfileContent extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(height: 10),
+          Obx(
+            () => Text(
+              "PSID: ${controller.userID.value}",
+              style: TextStyle(
+                fontSize: size.width * 0.045,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         ],
       ),
     );

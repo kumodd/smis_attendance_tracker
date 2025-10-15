@@ -17,10 +17,11 @@ class HomeController extends GetxController {
   var currentIndex = 0.obs;
   final TextEditingController searchTextController = TextEditingController();
 
-
   // Sticky header user info
   var userName = ''.obs;
   var userRole = ''.obs;
+  var userID = ''.obs;
+
   var userRoleType = ''.obs;
   var userDesignation = ''.obs;
   var userLocation = ''.obs;
@@ -62,6 +63,7 @@ class HomeController extends GetxController {
   void _loadUserData() {
     final user = storage.read("user") ?? {};
     userName.value = user["name"] ?? "User Name";
+    userID.value = user["userId"] ?? "";
     userRoleType.value = user["role"] ?? "Role";
     userRole.value =
         "${user["role"] ?? "Role"} • ${user["designation"] ?? "Designation"}";
