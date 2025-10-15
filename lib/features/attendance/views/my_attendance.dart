@@ -206,6 +206,32 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
                           date.day,
                         );
                         final office = attendanceMap[key];
+                        final today = DateTime.now();
+
+                        if (office == null &&
+                            date.isBefore(
+                              DateTime(today.year, today.month, today.day + 1),
+                            )) {
+                          final color = Colors.redAccent;
+                          return Center(
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: color.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '${date.day}',
+                                style: TextStyle(
+                                  color: color,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
 
                         if (office != null && office.isNotEmpty) {
                           final color = _getStatusColor(office);

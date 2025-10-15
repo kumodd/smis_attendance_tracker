@@ -27,6 +27,7 @@ class HomeView extends StatelessWidget {
       final isNormalUser = controller.userRoleType.value.toLowerCase().contains(
         "user",
       );
+      final isHOD = controller.userRole.value.toLowerCase().contains("hod");
 
       // Build BottomNavigationBar items conditionally
       final bottomNavItems = isNormalUser
@@ -34,6 +35,17 @@ class HomeView extends StatelessWidget {
               BottomNavigationBarItem(
                 icon: Icon(Icons.calendar_today),
                 label: "My Attendance",
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: "Profile",
+              ),
+            ]
+          : isHOD
+          ? [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.calendar_today),
+                label: "Home",
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),
@@ -60,7 +72,7 @@ class HomeView extends StatelessWidget {
           children: [
             _buildTopSection(size, isNormalUser),
             SizedBox(height: 30),
-            Expanded(child: _getPage(isNormalUser)),
+            Expanded(child: _getPage(isNormalUser, isHOD)),
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
@@ -86,7 +98,7 @@ class HomeView extends StatelessWidget {
     });
   }
 
-  Widget _getPage(bool isNormalUser) {
+  Widget _getPage(bool isNormalUser, bool isHOD) {
     if (isNormalUser) {
       switch (controller.currentIndex.value) {
         case 1:
@@ -95,6 +107,16 @@ class HomeView extends StatelessWidget {
           return const ProfileContent();
         default:
           return MyAttendanceScreen();
+      }
+    } else if (isHOD) {
+      switch (controller.currentIndex.value) {
+        case 0:
+          return DashboardScreen();
+
+        case 1:
+          return const ProfileContent();
+        default:
+          return DashboardScreen();
       }
     } else {
       switch (controller.currentIndex.value) {
@@ -197,77 +219,110 @@ class HomeView extends StatelessWidget {
                                           Get.back();
                                           Get.defaultDialog(
                                             title: "Confirm Logout",
-                                            middleText:
-                                                "Are you sure you want to logout?",
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    vertical: 8.0,
+                                                  ),
+                                                  child: Text(
+                                                    "Are you sure you want to logout?",
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        top: 10,
+                                                      ),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      OutlinedButton(
+                                                        onPressed: () =>
+                                                            Get.back(),
+                                                        style: OutlinedButton.styleFrom(
+                                                          foregroundColor:
+                                                              const Color(
+                                                                0xFF1B5E20,
+                                                              ),
+                                                          side:
+                                                              const BorderSide(
+                                                                color: Color(
+                                                                  0xFF1B5E20,
+                                                                ),
+                                                              ),
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  30,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        child: const Padding(
+                                                          padding:
+                                                              EdgeInsets.symmetric(
+                                                                horizontal: 16,
+                                                                vertical: 4,
+                                                              ),
+                                                          child: Text(
+                                                            "Cancel",
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 16),
+                                                      ElevatedButton(
+                                                        onPressed: () {
+                                                          Get.back();
+                                                          controller.logout();
+                                                        },
+                                                        style: ElevatedButton.styleFrom(
+                                                          backgroundColor:
+                                                              const Color(
+                                                                0xFF1B5E20,
+                                                              ),
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  30,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        child: const Padding(
+                                                          padding:
+                                                              EdgeInsets.symmetric(
+                                                                horizontal: 16,
+                                                                vertical: 4,
+                                                              ),
+                                                          child: Text(
+                                                            "Logout",
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                             radius: 12,
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                  horizontal: 20,
-                                                  vertical: 10,
-                                                ),
-                                            actions: [
-                                              Expanded(
-                                                child: OutlinedButton(
-                                                  onPressed: () => Get.back(),
-                                                  style: OutlinedButton.styleFrom(
-                                                    foregroundColor:
-                                                        const Color(0xFF1B5E20),
-                                                    side: const BorderSide(
-                                                      color: Color(0xFF1B5E20),
-                                                    ),
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            30,
-                                                          ),
-                                                    ),
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          vertical: 12,
-                                                        ),
-                                                  ),
-                                                  child: const Text(
-                                                    "Cancel",
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Expanded(
-                                                child: ElevatedButton(
-                                                  onPressed: () {
-                                                    Get.back();
-                                                    controller.logout();
-                                                  },
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        const Color(0xFF1B5E20),
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            30,
-                                                          ),
-                                                    ),
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          vertical: 12,
-                                                        ),
-                                                  ),
-                                                  child: const Text(
-                                                    "Logout",
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
                                           );
-                                          ;
                                         },
                                         child: Container(
                                           width: double.infinity,

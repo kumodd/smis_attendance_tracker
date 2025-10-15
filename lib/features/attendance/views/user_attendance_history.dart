@@ -58,6 +58,46 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
 
           return Column(
             children: [
+              // 🔽 Added Month-Year Header with Navigation Arrows
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_left),
+                    onPressed: () {
+                      setState(() {
+                        _focusedDay = DateTime(
+                          _focusedDay.year,
+                          _focusedDay.month - 1,
+                          1,
+                        );
+                      });
+                    },
+                  ),
+                  Text(
+                    DateFormat.yMMMM().format(_focusedDay),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_right),
+                    onPressed: () {
+                      setState(() {
+                        _focusedDay = DateTime(
+                          _focusedDay.year,
+                          _focusedDay.month + 1,
+                          1,
+                        );
+                      });
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // 🔼 End of added header
               TableCalendar(
                 focusedDay: _focusedDay,
                 firstDay: DateTime(_focusedDay.year, _focusedDay.month, 1),
@@ -77,6 +117,33 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                   defaultBuilder: (context, date, _) {
                     final key = DateTime(date.year, date.month, date.day);
                     final type = controller.attendanceMap[key];
+                    final today = DateTime.now();
+
+                    if (type == null &&
+                        date.isBefore(
+                          DateTime(today.year, today.month, today.day + 1),
+                        )) {
+                      final color = Colors.redAccent;
+                      return Center(
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '${date.day}',
+                            style: TextStyle(
+                              color: color,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
                     if (type != null) {
                       final color = _attendanceColor(type);
                       return Center(
@@ -93,9 +160,11 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                           child: Text(
                             '${date.day}',
                             style: TextStyle(
-                              color: type == AttendanceType.currentDate
-                                  ? Colors.white
-                                  : color,
+                              color: type == null
+                                  ? Colors.red
+                                  : (type == AttendanceType.currentDate
+                                        ? Colors.white
+                                        : color),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -113,7 +182,6 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                 children: [
                   _legendItem(const Color(0xFF73D28C), "ITC Green Center"),
                   _legendItem(Colors.orange, "Work From Home"),
-
                   _legendItem(Colors.blue, "Kanak Tower"),
                   _legendItem(Colors.redAccent, "Absent"),
                 ],

@@ -670,6 +670,7 @@ class DashboardScreen extends StatelessWidget {
                   child: Container(
                     color: Colors.black54,
                     child: const Center(
+                      
                       child: CircularProgressIndicator(color: Colors.white),
                     ),
                   ),

@@ -213,10 +213,10 @@ class AttendanceController extends GetxController {
         attendanceMap.value = mapped;
       } else {
         errorMessage.value =
-            response.data["message"] ?? "Failed to load attendance data";
+           "No data found";
       }
     } catch (e) {
-      errorMessage.value = "Error: $e";
+      errorMessage.value = "No data found";
       AppLogger.e("fetchUserAttendance failed: $e");
     } finally {
       isLoading.value = false;

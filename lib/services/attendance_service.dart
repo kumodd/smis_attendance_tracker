@@ -32,7 +32,7 @@ class AttendanceService {
     try {
       final requestBody = {
         "gpsLat": latitude,
-        "gpsLng": longitude,
+        "gpsLon": longitude,
         if (officeName != null)
           "officeName": officeName, // ✅ add only if matched
       };
